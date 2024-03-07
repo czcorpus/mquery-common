@@ -26,11 +26,6 @@ var (
 	splitPatt = regexp.MustCompile(`\s+`)
 )
 
-type Concordance struct {
-	Lines    []string
-	ConcSize int
-}
-
 // Token is a single text position in a corpus text.
 type Token struct {
 	Word string `json:"word"`
@@ -55,7 +50,7 @@ func (t *Token) HasError() bool {
 
 type TokenSlice []*Token
 
-type ConcordanceLine struct {
+type Line struct {
 
 	// Text contains positional text data (= tokens)
 	Text TokenSlice `json:"text"`

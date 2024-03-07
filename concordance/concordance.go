@@ -25,10 +25,6 @@ import (
 	"unicode/utf8"
 )
 
-const (
-	invalidParent = 1000000
-)
-
 // LineParser parses Manatee-encoded concordance lines and converts
 // them into (more structured) MQuery format.
 type LineParser struct {
@@ -91,11 +87,11 @@ func (lp *LineParser) normalizeTokens(tokens []string) []string {
 }
 
 // parseRawLine
-func (lp *LineParser) parseRawLine(line string) ConcordanceLine {
+func (lp *LineParser) parseRawLine(line string) Line {
 	rtokens := splitPatt.Split(html.EscapeString(line), -1)
 	items := lp.normalizeTokens(rtokens[1:])
 	if len(items)%4 != 0 {
-		return ConcordanceLine{
+		return Line{
 			Text:   []*Token{{Word: "---- ERROR (unparseable) ----"}},
 			Ref:    rtokens[0],
 			ErrMsg: fmt.Sprintf("unparseable Manatee KWIC line: `%s`", line),
@@ -105,13 +101,13 @@ func (lp *LineParser) parseRawLine(line string) ConcordanceLine {
 	for i := 0; i < len(items); i += 4 {
 		tokens = append(tokens, lp.parseTokenQuadruple(items[i:i+4]))
 	}
-	return ConcordanceLine{Text: tokens, Ref: rtokens[0]}
+	return Line{Text: tokens, Ref: rtokens[0]}
 }
 
 // It also escapes strings to make them usable in XML documents.
-func (lp *LineParser) Parse(data Concordance) []ConcordanceLine {
-	pLines := make([]ConcordanceLine, len(data.Lines))
-	for i, line := range data.Lines {
+func (lp *LineParser) Parse(lines []string) []Line {
+	pLines := make([]Line, len(lines))
+	for i, line := range lines {
 		pLines[i] = lp.parseRawLine(line)
 	}
 	return pLines
