@@ -41,7 +41,7 @@ type Token struct {
 	// with parsing related to the token. The policy here is
 	// to always return a token with value replaced by a placeholder
 	// in case of an error.
-	ErrMsg string `json:"errMsg"`
+	ErrMsg string `json:"errMsg,omitempty"`
 }
 
 func (t *Token) HasError() bool {
@@ -62,5 +62,5 @@ type Line struct {
 	// with parsing related to the line. The policy here is
 	// to always return a line with value replaced by a placeholder
 	// in case of an error.
-	ErrMsg string `json:"errMsg"`
+	ErrMsg string `json:"errMsg,omitempty"`
 }
