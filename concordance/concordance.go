@@ -86,10 +86,45 @@ func (lp *LineParser) normalizeTokens(tokens []string) []string {
 	return ans
 }
 
+func (lp *LineParser) splitToTokens(line string) []string {
+	line = collIDPatt.ReplaceAllString(line, "{coll}")
+
+	rtokens := splitPatt.Split(html.EscapeString(line), -1)
+	ansTokens := make([]string, 0, len(rtokens)+5)
+	for _, rtk := range rtokens {
+		srch := mrgTokPatt.FindStringSubmatch(rtk)
+		if len(srch) > 1 {
+			ansTokens = append(ansTokens, srch[2])
+
+		} else {
+			ansTokens = append(ansTokens, rtk)
+		}
+	}
+	return ansTokens
+}
+
+func (lp *LineParser) rmExtraColl(tokens []string) []string {
+	if len(tokens)%4 == 0 {
+		return tokens
+	}
+	ans := make([]string, 0, len(tokens))
+	var prev string
+	for _, tk := range tokens {
+		if prev == "attr" && tk == "{coll}" {
+			prev = tk
+			continue
+		}
+		ans = append(ans, tk)
+		prev = tk
+	}
+	return ans
+}
+
 // parseRawLine
 func (lp *LineParser) parseRawLine(line string) Line {
-	rtokens := splitPatt.Split(html.EscapeString(line), -1)
+	rtokens := lp.splitToTokens(line)
 	items := lp.normalizeTokens(rtokens[1:])
+	items = lp.rmExtraColl(items)
 	if len(items)%4 != 0 {
 		return Line{
 			Text:   []*Token{{Word: "---- ERROR (unparseable) ----"}},
