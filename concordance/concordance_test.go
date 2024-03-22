@@ -26,6 +26,13 @@ const (
 		`která {} /který/zavádět/+1 attr  zavádí {} /zavádět/země/-5 attr  ` +
 		`celoplošný {} /celoplošný/provoz/+1 attr provoz {col0 coll} /provoz/zavádět/-2 attr ` +
 		`těchto {} /tento/služba/+1 attr  služeb {} /služba/provoz/-2 attr  . {} /.//0 attr`
+
+	ts2 = `#108182398 ` +
+		`. {} /./Z:------------- attr  ?? {} /??/Z:------------- attr  KDYŽ {} /když/J,------------- attr` +
+		`   {}VEJCE {col0 coll coll coll1} /vejce/NNNS1-----A---- attr  K {col0 coll} /k/RR--3---------- attr` +
+		`   {col0 coll} VEJCI {col0 coll coll coll2} /vejce/NNNS3-----A---- attr` +
+		`  SEDÁ {col0 coll} /sedat/VB-S---3P-AAI-- attr Z {} /z/RR--2---------- attr` +
+		`  váz {} /váza/NNFP2-----A---- attr  a {} /a/J^------------- attr'`
 )
 
 func TestExampleLines(t *testing.T) {
@@ -45,4 +52,12 @@ func TestExampleLines(t *testing.T) {
 	assert.Equal(t, ".", ans[0].Text[6].Attrs["lemma"])
 	assert.Equal(t, "", ans[0].Text[6].Attrs["p_lemma"])
 	assert.Equal(t, "0", ans[0].Text[6].Attrs["parent"])
+}
+
+func TestRegression1(t *testing.T) {
+	p := NewLineParser([]string{"word", "lemma", "tag"})
+	ans := p.Parse([]string{ts2})
+	for _, a := range ans {
+		assert.Zero(t, a.ErrMsg)
+	}
 }

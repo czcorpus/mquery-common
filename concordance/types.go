@@ -23,7 +23,9 @@ import (
 )
 
 var (
-	splitPatt = regexp.MustCompile(`\s+`)
+	splitPatt  = regexp.MustCompile(`\s+`)
+	mrgTokPatt = regexp.MustCompile(`(\{[^}]*\})([^\s]+)`)
+	collIDPatt = regexp.MustCompile(`\{col\w+(\s+col\w+)*}`)
 )
 
 // Token is a single text position in a corpus text.
