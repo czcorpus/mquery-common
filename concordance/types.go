@@ -19,14 +19,36 @@
 package concordance
 
 import (
+	"fmt"
 	"regexp"
+
+	"github.com/bytedance/sonic"
 )
 
 var (
-	splitPatt  = regexp.MustCompile(`\s+`)
-	mrgTokPatt = regexp.MustCompile(`(\{[^}]*\})([^\s]+)`)
-	collIDPatt = regexp.MustCompile(`\{col\w+(\s+col\w+)*}`)
+	splitPatt       = regexp.MustCompile(`\s+`)
+	mrgTokPatt      = regexp.MustCompile(`(\{[^}]*\})([^\s]+)`)
+	collIDPatt      = regexp.MustCompile(`\{col\w+(\s+col\w+)*}`)
+	tagSrchRegexpSC = regexp.MustCompile(`^<([\w\d\p{Po}]+)(\s+.*?|)/>$`)
+	tagSrchRegexp   = regexp.MustCompile("^<([\\w\\d\\p{Po}]+)(\\s+.*?|)/?>$")
+	tagsAndNoTags   = regexp.MustCompile(`((<[^>]+>)+ strc)|([^<]+)`)
+	splitTags       = regexp.MustCompile(`(<[^>]+>)`)
+	attrValRegexp   = regexp.MustCompile(`(\w+)=([^"^\s]+)`)
+	closeTagRegexp  = regexp.MustCompile(`</([^>]+)\s*>`)
 )
+
+type lineChunk struct {
+	value    string
+	isStruct bool
+}
+
+type LineElement interface {
+	MarshalJSON() ([]byte, error)
+	HasError() bool
+}
+
+// ------------- token and methods
+// -------------------------------
 
 // Token is a single text position in a corpus text.
 type Token struct {
@@ -50,7 +72,31 @@ func (t *Token) HasError() bool {
 	return t.ErrMsg != ""
 }
 
-type TokenSlice []*Token
+func (t *Token) MarshalJSON() ([]byte, error) {
+	return sonic.Marshal(
+		struct {
+			Type   string            `json:"type"`
+			Word   string            `json:"word"`
+			Strong bool              `json:"strong"`
+			Attrs  map[string]string `json:"attrs"`
+			ErrMsg string            `json:"errMsg,omitempty"`
+		}{
+			Type:   "token",
+			Word:   t.Word,
+			Strong: t.Strong,
+			Attrs:  t.Attrs,
+			ErrMsg: t.ErrMsg,
+		},
+	)
+}
+
+func (t *Token) String() string {
+	return fmt.Sprintf("Token{Value: %s}", t.Word)
+}
+
+// ----------------------------------------------
+
+type TokenSlice []LineElement
 
 type Line struct {
 

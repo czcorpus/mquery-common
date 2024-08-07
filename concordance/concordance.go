@@ -20,7 +20,6 @@ package concordance
 
 import (
 	"fmt"
-	"html"
 	"strings"
 	"unicode/utf8"
 )
@@ -89,7 +88,7 @@ func (lp *LineParser) normalizeTokens(tokens []string) []string {
 func (lp *LineParser) splitToTokens(line string) []string {
 	line = collIDPatt.ReplaceAllString(line, "{coll}")
 
-	rtokens := splitPatt.Split(html.EscapeString(line), -1)
+	rtokens := splitPatt.Split(line, -1)
 	ansTokens := make([]string, 0, len(rtokens)+5)
 	for _, rtk := range rtokens {
 		srch := mrgTokPatt.FindStringSubmatch(rtk)
@@ -120,23 +119,51 @@ func (lp *LineParser) rmExtraColl(tokens []string) []string {
 	return ans
 }
 
-// parseRawLine
-func (lp *LineParser) parseRawLine(line string) Line {
-	rtokens := lp.splitToTokens(line)
-	items := lp.normalizeTokens(rtokens[1:])
-	items = lp.rmExtraColl(items)
-	if len(items)%4 != 0 {
-		return Line{
-			Text:   []*Token{{Word: "---- ERROR (unparseable) ----"}},
-			Ref:    rtokens[0],
-			ErrMsg: fmt.Sprintf("unparseable Manatee KWIC line: `%s`", line),
+func (lp *LineParser) extractStructures(line string) []lineChunk {
+	chunks := tagsAndNoTags.FindAllString(line, -1)
+	ans := make([]lineChunk, len(chunks))
+	for i, ch := range chunks {
+		if strings.HasPrefix(ch, "<") && strings.HasSuffix(ch, "strc") {
+			ans[i] = lineChunk{value: ch, isStruct: true}
+
+		} else {
+			ans[i] = lineChunk{value: ch}
 		}
 	}
-	tokens := make(TokenSlice, 0, len(items)/4)
-	for i := 0; i < len(items); i += 4 {
-		tokens = append(tokens, lp.parseTokenQuadruple(items[i:i+4]))
+	return ans
+}
+
+// parseRawLine
+func (lp *LineParser) parseRawLine(rawLine string) Line {
+	chunks := lp.extractStructures(rawLine)
+	line := Line{}
+	for i, chunk := range chunks {
+		if chunk.isStruct {
+			multiStructSrch := splitTags.FindAllStringSubmatch(chunk.value, -1)
+			for _, item := range multiStructSrch {
+				line.Text = append(line.Text, parseStructure(item[1]))
+			}
+
+		} else {
+			rtokens := lp.splitToTokens(chunk.value)
+			if i == 0 {
+				line.Ref = rtokens[0]
+				rtokens = rtokens[1:]
+			}
+			items := lp.normalizeTokens(rtokens)
+			items = lp.rmExtraColl(items)
+			if len(items)%4 != 0 {
+				line.Text = append(line.Text, &Token{Word: "---- ERROR (unparseable) ----"})
+				line.ErrMsg = fmt.Sprintf("unparseable Manatee KWIC line: `%s`", chunk.value)
+
+			} else {
+				for i := 0; i < len(items); i += 4 {
+					line.Text = append(line.Text, lp.parseTokenQuadruple(items[i:i+4]))
+				}
+			}
+		}
 	}
-	return Line{Text: tokens, Ref: rtokens[0]}
+	return line
 }
 
 // It also escapes strings to make them usable in XML documents.
