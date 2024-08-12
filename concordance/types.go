@@ -30,7 +30,7 @@ var (
 	mrgTokPatt      = regexp.MustCompile(`(\{[^}]*\})([^\s]+)`)
 	collIDPatt      = regexp.MustCompile(`\{col\w+(\s+col\w+)*}`)
 	tagSrchRegexpSC = regexp.MustCompile(`^<([\w\d\p{Po}]+)(\s+.*?|)/>$`)
-	tagSrchRegexp   = regexp.MustCompile("^<([\\w\\d\\p{Po}]+)(\\s+.*?|)/?>$")
+	tagSrchRegexp   = regexp.MustCompile(`^<([\w\d\p{Po}]+)(\s+.*?|)/?>$`)
 	tagsAndNoTags   = regexp.MustCompile(`((<[^>]+>)+ strc)|([^<]+)`)
 	splitTags       = regexp.MustCompile(`(<[^>]+>)`)
 	attrValRegexp   = regexp.MustCompile(`(\w+)=([^"^\s]+)`)
