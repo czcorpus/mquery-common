@@ -171,7 +171,7 @@ func (lp *LineParser) parseRawLine(rawLine string) Line {
 		} else {
 			rtokens, refs := lp.splitToTokens(chunk.value)
 			if i == 0 {
-				line.Metadata, line.Ref = lp.parseRefs(refs)
+				line.Props, line.Ref = lp.parseRefs(refs)
 			}
 			items := lp.normalizeTokens(rtokens)
 			items = lp.rmExtraColl(items)
