@@ -24,6 +24,10 @@ import (
 	"unicode/utf8"
 )
 
+const (
+	RefsEndMark = "{refs:end}"
+)
+
 // LineParser parses Manatee-encoded concordance lines and converts
 // them into (more structured) MQuery format.
 type LineParser struct {
@@ -85,9 +89,15 @@ func (lp *LineParser) normalizeTokens(tokens []string) []string {
 	return ans
 }
 
-func (lp *LineParser) splitToTokens(line string) []string {
+func (lp *LineParser) splitToTokens(line string) ([]string, string) {
 	line = collIDPatt.ReplaceAllString(line, "{coll}")
 
+	refsAndRest := strings.Split(line, RefsEndMark)
+	var refsText string
+	if len(refsAndRest) > 1 {
+		refsText = refsAndRest[0]
+		line = strings.Join(refsAndRest[1:], " ")
+	}
 	rtokens := splitPatt.Split(line, -1)
 	ansTokens := make([]string, 0, len(rtokens)+5)
 	for _, rtk := range rtokens {
@@ -99,7 +109,7 @@ func (lp *LineParser) splitToTokens(line string) []string {
 			ansTokens = append(ansTokens, rtk)
 		}
 	}
-	return ansTokens
+	return ansTokens, refsText
 }
 
 func (lp *LineParser) rmExtraColl(tokens []string) []string {
@@ -133,6 +143,20 @@ func (lp *LineParser) extractStructures(line string) []lineChunk {
 	return ans
 }
 
+func (lp *LineParser) parseRefs(refs string) (ans map[string]string, ref string) {
+	ans = make(map[string]string)
+	srch := refsRegexp.FindAllStringSubmatch(refs, -1)
+	for _, item := range srch {
+		if strings.HasPrefix(item[0], "#") {
+			ref = item[0]
+
+		} else {
+			ans[item[2]] = item[3]
+		}
+	}
+	return
+}
+
 // parseRawLine
 func (lp *LineParser) parseRawLine(rawLine string) Line {
 	chunks := lp.extractStructures(rawLine)
@@ -145,10 +169,9 @@ func (lp *LineParser) parseRawLine(rawLine string) Line {
 			}
 
 		} else {
-			rtokens := lp.splitToTokens(chunk.value)
+			rtokens, refs := lp.splitToTokens(chunk.value)
 			if i == 0 {
-				line.Ref = rtokens[0]
-				rtokens = rtokens[1:]
+				line.Metadata, line.Ref = lp.parseRefs(refs)
 			}
 			items := lp.normalizeTokens(rtokens)
 			items = lp.rmExtraColl(items)
