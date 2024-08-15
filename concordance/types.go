@@ -119,7 +119,7 @@ type Line struct {
 	// Props contains information about the text this
 	// line comes from (typically information like author,
 	// publication year etc.)
-	Props map[string]string `json:"props"`
+	Props map[string]string `json:"props,omitempty"`
 
 	// ErrMsg is an error message in case problems occured
 	// with parsing related to the line. The policy here is

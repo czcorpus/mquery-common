@@ -52,7 +52,7 @@ func asTokenOrPanic(v LineElement) *Token {
 
 func TestExampleLines(t *testing.T) {
 	p := NewLineParser([]string{"word", "lemma", "p_lemma", "parent"})
-	ans := p.Parse([]string{ts1})
+	ans := p.Parse([]string{ts1}, "/")
 	assert.Equal(t, "", ans[0].ErrMsg)
 	assert.Equal(t, "#75308554", ans[0].Ref)
 	tok := asTokenOrPanic(ans[0].Text[0])
@@ -73,7 +73,7 @@ func TestExampleLines(t *testing.T) {
 
 func TestRegression1(t *testing.T) {
 	p := NewLineParser([]string{"word", "lemma", "tag"})
-	ans := p.Parse([]string{ts2})
+	ans := p.Parse([]string{ts2}, "/")
 	for _, a := range ans {
 		assert.Zero(t, a.ErrMsg)
 	}
@@ -81,7 +81,7 @@ func TestRegression1(t *testing.T) {
 
 func TestParsingLineWithStructs(t *testing.T) {
 	p := NewLineParser([]string{"word", "lemma", "tag"})
-	ans := p.Parse([]string{ts3_struct})
+	ans := p.Parse([]string{ts3_struct}, "/")
 	for _, a := range ans {
 		assert.NotZero(t, a.ErrMsg)
 	}

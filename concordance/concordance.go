@@ -25,7 +25,10 @@ import (
 )
 
 const (
-	RefsEndMark = "{refs:end}"
+	RefsEndMark    = "{refs:end}"
+	AttrDelimSlash = "/"
+	AttrDelimUS    = "\x1F"
+	AttrDelimTAB   = "\x09"
 )
 
 // LineParser parses Manatee-encoded concordance lines and converts
@@ -34,9 +37,9 @@ type LineParser struct {
 	attrs []string
 }
 
-func (lp *LineParser) parseTokenQuadruple(s []string) *Token {
+func (lp *LineParser) parseTokenQuadruple(s []string, delimiter string) *Token {
 	mAttrs := make(map[string]string)
-	rawAttrs := strings.Split(s[2], "/")[1:]
+	rawAttrs := strings.Split(s[2], delimiter)[1:]
 	var token Token
 	if len(rawAttrs) != len(lp.attrs)-1 {
 		token.ErrMsg = fmt.Sprintf(
@@ -144,13 +147,15 @@ func (lp *LineParser) extractStructures(line string) []lineChunk {
 }
 
 func (lp *LineParser) parseRefs(refs string) (ans map[string]string, ref string) {
-	ans = make(map[string]string)
 	srch := refsRegexp.FindAllStringSubmatch(refs, -1)
 	for _, item := range srch {
 		if strings.HasPrefix(item[0], "#") {
 			ref = item[0]
 
 		} else {
+			if ans == nil {
+				ans = make(map[string]string)
+			}
 			ans[item[2]] = item[3]
 		}
 	}
@@ -158,7 +163,7 @@ func (lp *LineParser) parseRefs(refs string) (ans map[string]string, ref string)
 }
 
 // parseRawLine
-func (lp *LineParser) parseRawLine(rawLine string) Line {
+func (lp *LineParser) parseRawLine(rawLine string, attrDelim string) Line {
 	chunks := lp.extractStructures(rawLine)
 	line := Line{}
 	for i, chunk := range chunks {
@@ -181,7 +186,7 @@ func (lp *LineParser) parseRawLine(rawLine string) Line {
 
 			} else {
 				for i := 0; i < len(items); i += 4 {
-					line.Text = append(line.Text, lp.parseTokenQuadruple(items[i:i+4]))
+					line.Text = append(line.Text, lp.parseTokenQuadruple(items[i:i+4], attrDelim))
 				}
 			}
 		}
@@ -190,10 +195,10 @@ func (lp *LineParser) parseRawLine(rawLine string) Line {
 }
 
 // It also escapes strings to make them usable in XML documents.
-func (lp *LineParser) Parse(lines []string) []Line {
+func (lp *LineParser) Parse(lines []string, attrDelim string) []Line {
 	pLines := make([]Line, len(lines))
 	for i, line := range lines {
-		pLines[i] = lp.parseRawLine(line)
+		pLines[i] = lp.parseRawLine(line, attrDelim)
 	}
 	return pLines
 }
