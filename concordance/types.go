@@ -106,7 +106,7 @@ func (t *Token) String() string {
 // in a concordance line
 type TokenSlice []LineElement
 
-// Line represents a concordance line and its metadata
+// Line represents a concordance line and its metadata (properties)
 type Line struct {
 
 	// Text contains positional text data (= tokens)
@@ -116,10 +116,10 @@ type Line struct {
 	// It is typically used when referring back to the concordance
 	Ref string `json:"ref"`
 
-	// Metadata contains information about the text this
+	// Props contains information about the text this
 	// line comes from (typically information like author,
 	// publication year etc.)
-	Metadata map[string]string `json:"metadata"`
+	Props map[string]string `json:"props"`
 
 	// ErrMsg is an error message in case problems occured
 	// with parsing related to the line. The policy here is
