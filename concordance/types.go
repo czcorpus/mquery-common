@@ -35,13 +35,19 @@ var (
 	splitTags       = regexp.MustCompile(`(<[^>]+>)`)
 	attrValRegexp   = regexp.MustCompile(`(\w+)=([^"^\s]+)`)
 	closeTagRegexp  = regexp.MustCompile(`</([^>]+)\s*>`)
+	refsRegexp      = regexp.MustCompile(`((\w+\.\w+)=([^,]+))|(#\d+)`)
 )
 
+// lineChunk is a partially parsed conconcrdance line.
+// Typically this comes from initial parsing when we
+// detect markup and normal text.
 type lineChunk struct {
 	value    string
 	isStruct bool
 }
 
+// LineElement is a generalization of tokens and structures (markup)
+// within a line
 type LineElement interface {
 	MarshalJSON() ([]byte, error)
 	HasError() bool
@@ -96,15 +102,24 @@ func (t *Token) String() string {
 
 // ----------------------------------------------
 
+// TokenSlice represents a flow of tokens and markup
+// in a concordance line
 type TokenSlice []LineElement
 
+// Line represents a concordance line and its metadata
 type Line struct {
 
 	// Text contains positional text data (= tokens)
 	Text TokenSlice `json:"text"`
 
-	// Ref contains structural metadata related to the line
+	// Ref contains numeric ID of the first token of the KWIC
+	// It is typically used when referring back to the concordance
 	Ref string `json:"ref"`
+
+	// Metadata contains information about the text this
+	// line comes from (typically information like author,
+	// publication year etc.)
+	Metadata map[string]string `json:"metadata"`
 
 	// ErrMsg is an error message in case problems occured
 	// with parsing related to the line. The policy here is
