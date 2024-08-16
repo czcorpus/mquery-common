@@ -20,22 +20,8 @@ package concordance
 
 import (
 	"fmt"
-	"regexp"
 
 	"github.com/bytedance/sonic"
-)
-
-var (
-	splitPatt       = regexp.MustCompile(`\s+`)
-	mrgTokPatt      = regexp.MustCompile(`(\{[^}]*\})([^\s]+)`)
-	collIDPatt      = regexp.MustCompile(`\{col\w+(\s+col\w+)*}`)
-	tagSrchRegexpSC = regexp.MustCompile(`^<([\w\d\p{Po}]+)(\s+.*?|)/>$`)
-	tagSrchRegexp   = regexp.MustCompile(`^<([\w\d\p{Po}]+)(\s+.*?|)/?>$`)
-	tagsAndNoTags   = regexp.MustCompile(`((<[^>]+>)+ strc)|([^<]+)`)
-	splitTags       = regexp.MustCompile(`(<[^>]+>)`)
-	attrValRegexp   = regexp.MustCompile(`(\w+)=([^"^\s]+)`)
-	closeTagRegexp  = regexp.MustCompile(`</([^>]+)\s*>`)
-	refsRegexp      = regexp.MustCompile(`((\w+\.\w+)=([^,]+))|(#\d+)`)
 )
 
 // lineChunk is a partially parsed conconcrdance line.

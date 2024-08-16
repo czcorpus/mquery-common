@@ -25,6 +25,8 @@ import (
 )
 
 const (
+	// RefsEndMark is a custom separator which is used by Mquery
+	// to separate the "refs" section of a line output to
 	RefsEndMark    = "{refs:end}"
 	AttrDelimSlash = "/"
 	AttrDelimUS    = "\x1F"
@@ -132,6 +134,8 @@ func (lp *LineParser) rmExtraColl(tokens []string) []string {
 	return ans
 }
 
+// extractStructures is a first stage parsing of Manatee concordance output which
+// isolates text and structural (markup) chunks.
 func (lp *LineParser) extractStructures(line string) []lineChunk {
 	chunks := tagsAndNoTags.FindAllString(line, -1)
 	ans := make([]lineChunk, len(chunks))
@@ -146,6 +150,7 @@ func (lp *LineParser) extractStructures(line string) []lineChunk {
 	return ans
 }
 
+// parseRefs parses text metadata (aka "refs" in KonText/NoSkE)
 func (lp *LineParser) parseRefs(refs string) (ans map[string]string, ref string) {
 	srch := refsRegexp.FindAllStringSubmatch(refs, -1)
 	for _, item := range srch {
@@ -194,7 +199,12 @@ func (lp *LineParser) parseRawLine(rawLine string, attrDelim string) Line {
 	return line
 }
 
-// It also escapes strings to make them usable in XML documents.
+// Parse parses custom Manatee-open concordance output format into
+// a structured one. The `attrDelim` specifies ASCII character used
+// as a separator between individual positional attributes. Manatee-open
+// uses "/" as a hardcoded value but our (CNC) forks may provide
+// more suitable selection (e.g. the "unit separator" character) so it
+// does not collide with text itself.
 func (lp *LineParser) Parse(lines []string, attrDelim string) []Line {
 	pLines := make([]Line, len(lines))
 	for i, line := range lines {

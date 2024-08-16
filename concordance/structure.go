@@ -8,8 +8,8 @@ import (
 )
 
 type CloseStruct struct {
-	Name  string `json:"name"`
-	Error error  `json:"error"`
+	Name  string
+	Error error
 }
 
 func (s *CloseStruct) String() string {
@@ -20,11 +20,11 @@ func (s *CloseStruct) MarshalJSON() ([]byte, error) {
 	return sonic.Marshal(
 		struct {
 			Type          string `json:"type"`
-			Name          string `json:"name"`
 			StructureType string `json:"structureType"`
-			Error         error  `json:"error"`
+			Name          string `json:"name"`
+			Error         error  `json:"error,omitempty"`
 		}{
-			Type:          "structure",
+			Type:          "markup",
 			StructureType: "close",
 			Name:          s.Name,
 			Error:         s.Error,
@@ -39,12 +39,12 @@ func (s *CloseStruct) HasError() bool {
 // -------
 
 type Struct struct {
-	Name  string            `json:"name"`
-	Attrs map[string]string `json:"attrs"`
+	Name  string
+	Attrs map[string]string
 	// ErrMsg is an error message in case problems occured
 	// with parsing related to the structure.
-	ErrMsg      string `json:"errMsg,omitempty"`
-	IsSelfClose bool   `json:"isSelfClose,omitempty"`
+	ErrMsg      string
+	IsSelfClose bool
 }
 
 func (t *Struct) String() string {
@@ -76,7 +76,7 @@ func (t *Struct) MarshalJSON() ([]byte, error) {
 			Type          string            `json:"type"`
 			StructureType string            `json:"structureType"`
 			Name          string            `json:"name"`
-			ErrMsg        string            `json:"errMsg,omitempty"`
+			ErrMsg        string            `json:"error,omitempty"`
 			Attrs         map[string]string `json:"attrs,omitempty"`
 		}{
 			Type:          "markup",
