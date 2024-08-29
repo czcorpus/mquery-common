@@ -26,19 +26,19 @@ import (
 )
 
 const (
-	ts1 = `#75308554 ` +
+	ts1 = `#75308554 ` + RefsEndMark + " " +
 		`která {} /který/zavádět/+1 attr  zavádí {} /zavádět/země/-5 attr  ` +
 		`celoplošný {} /celoplošný/provoz/+1 attr provoz {col0 coll} /provoz/zavádět/-2 attr ` +
 		`těchto {} /tento/služba/+1 attr  služeb {} /služba/provoz/-2 attr  . {} /.//0 attr`
 
-	ts2 = `#108182398 ` +
+	ts2 = `#108182398 ` + RefsEndMark + " " +
 		`. {} /./Z:------------- attr  ?? {} /??/Z:------------- attr  KDYŽ {} /když/J,------------- attr` +
 		`   {}VEJCE {col0 coll coll coll1} /vejce/NNNS1-----A---- attr  K {col0 coll} /k/RR--3---------- attr` +
 		`   {col0 coll} VEJCI {col0 coll coll coll2} /vejce/NNNS3-----A---- attr` +
 		`  SEDÁ {col0 coll} /sedat/VB-S---3P-AAI-- attr Z {} /z/RR--2---------- attr` +
 		`  váz {} /váza/NNFP2-----A---- attr  a {} /a/J^------------- attr'`
 
-	ts3_struct = `#61705575 ` +
+	ts3_struct = `#61705575 ` + RefsEndMark + " " +
 		`pasti {} /past/NNFS2-----A---- attr <g foo=bar /> strc . {} /./Z:------------- attr </hi></s><s id=picko_knihaofyzi:1:1144:4><hi> strc` +
 		` 1982 {} /1982/C=------------- attr  / {} ///Z:------------- attr <g/> strc / {} ///Z:------------- attr <g/> strc Kvazikrystaly` +
 		` {col0 coll} /kvazikrystal/NNIP1-----A---- attr</s><s id=picko_knihaofyzi:1:1145:1 strong=true> strc Na {} /na/RR--4---------- attr  exotické` +
@@ -56,7 +56,7 @@ func asTokenOrPanic(v LineElement) *Token {
 
 func TestExampleLines(t *testing.T) {
 	p := NewLineParser([]string{"word", "lemma", "p_lemma", "parent"})
-	ans := p.Parse([]string{ts1}, "/")
+	ans := p.Parse([]string{ts1})
 	assert.Equal(t, "", ans[0].ErrMsg)
 	assert.Equal(t, "#75308554", ans[0].Ref)
 	tok := asTokenOrPanic(ans[0].Text[0])
@@ -77,7 +77,7 @@ func TestExampleLines(t *testing.T) {
 
 func TestRegression1(t *testing.T) {
 	p := NewLineParser([]string{"word", "lemma", "tag"})
-	ans := p.Parse([]string{ts2}, "/")
+	ans := p.Parse([]string{ts2})
 	for _, a := range ans {
 		assert.Zero(t, a.ErrMsg)
 	}
@@ -85,8 +85,29 @@ func TestRegression1(t *testing.T) {
 
 func TestParsingLineWithStructs(t *testing.T) {
 	p := NewLineParser([]string{"word", "lemma", "tag"})
-	ans := p.Parse([]string{ts3_struct}, "/")
+	ans := p.Parse([]string{ts3_struct})
 	for _, a := range ans {
-		assert.NotZero(t, a.ErrMsg)
+		assert.Zero(t, a.ErrMsg)
+		structList := make([]*Struct, 0, 5)
+		closesList := make([]*CloseStruct, 0, 5)
+		for _, item := range a.Text {
+			switch tItem := item.(type) {
+			case *Struct:
+				structList = append(structList, tItem)
+			case *CloseStruct:
+				closesList = append(closesList, tItem)
+			}
+		}
+		assert.Len(t, structList, 6)
+		assert.Equal(t, "g", structList[0].Name)
+		assert.True(t, structList[0].IsSelfClose)
+		assert.Equal(t, "bar", structList[0].Attrs["foo"])
+		assert.Equal(t, "s", structList[5].Name)
+		assert.Equal(t, "picko_knihaofyzi:1:1145:1", structList[5].Attrs["id"])
+		assert.Equal(t, "true", structList[5].Attrs["strong"])
+		assert.Len(t, closesList, 3)
+		assert.Equal(t, "hi", closesList[0].Name)
+		assert.Equal(t, "s", closesList[1].Name)
+		assert.Equal(t, "s", closesList[2].Name)
 	}
 }
