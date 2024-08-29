@@ -27,10 +27,7 @@ import (
 const (
 	// RefsEndMark is a custom separator which is used by Mquery
 	// to separate the "refs" section of a line output to
-	RefsEndMark    = "{refs:end}"
-	AttrDelimSlash = "/"
-	AttrDelimUS    = "\x1F"
-	AttrDelimTAB   = "\x09"
+	RefsEndMark = "{refs:end}"
 )
 
 // LineParser parses Manatee-encoded concordance lines and converts
@@ -39,9 +36,12 @@ type LineParser struct {
 	attrs []string
 }
 
-func (lp *LineParser) parseTokenQuadruple(s []string, delimiter string) *Token {
+func (lp *LineParser) parseTokenQuadruple(s []string) *Token {
 	mAttrs := make(map[string]string)
-	rawAttrs := strings.Split(s[2], delimiter)[1:]
+	attrString := s[2]
+	delimiter := attrString[:1] // we can use such value access as delim. is never > 1 byte
+	fmt.Println("delimiter: ", delimiter)
+	rawAttrs := strings.Split(attrString, delimiter)[1:]
 	var token Token
 	if len(rawAttrs) != len(lp.attrs)-1 {
 		token.ErrMsg = fmt.Sprintf(
@@ -168,7 +168,7 @@ func (lp *LineParser) parseRefs(refs string) (ans map[string]string, ref string)
 }
 
 // parseRawLine
-func (lp *LineParser) parseRawLine(rawLine string, attrDelim string) Line {
+func (lp *LineParser) parseRawLine(rawLine string) Line {
 	chunks := lp.extractStructures(rawLine)
 	line := Line{}
 	for i, chunk := range chunks {
@@ -191,7 +191,7 @@ func (lp *LineParser) parseRawLine(rawLine string, attrDelim string) Line {
 
 			} else {
 				for i := 0; i < len(items); i += 4 {
-					line.Text = append(line.Text, lp.parseTokenQuadruple(items[i:i+4], attrDelim))
+					line.Text = append(line.Text, lp.parseTokenQuadruple(items[i:i+4]))
 				}
 			}
 		}
@@ -205,10 +205,10 @@ func (lp *LineParser) parseRawLine(rawLine string, attrDelim string) Line {
 // uses "/" as a hardcoded value but our (CNC) forks may provide
 // more suitable selection (e.g. the "unit separator" character) so it
 // does not collide with text itself.
-func (lp *LineParser) Parse(lines []string, attrDelim string) []Line {
+func (lp *LineParser) Parse(lines []string) []Line {
 	pLines := make([]Line, len(lines))
 	for i, line := range lines {
-		pLines[i] = lp.parseRawLine(line, attrDelim)
+		pLines[i] = lp.parseRawLine(line)
 	}
 	return pLines
 }
