@@ -1,10 +1,9 @@
 package concordance
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
-
-	"github.com/bytedance/sonic"
 )
 
 type CloseStruct struct {
@@ -17,7 +16,7 @@ func (s *CloseStruct) String() string {
 }
 
 func (s *CloseStruct) MarshalJSON() ([]byte, error) {
-	return sonic.Marshal(
+	return json.Marshal(
 		struct {
 			Type          string `json:"type"`
 			StructureType string `json:"structureType"`
@@ -71,7 +70,7 @@ func (t *Struct) MarshalJSON() ([]byte, error) {
 	if t.IsSelfClose {
 		sType = "self-close"
 	}
-	return sonic.Marshal(
+	return json.Marshal(
 		struct {
 			Type          string            `json:"type"`
 			StructureType string            `json:"structureType"`

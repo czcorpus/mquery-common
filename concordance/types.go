@@ -19,9 +19,8 @@
 package concordance
 
 import (
+	"encoding/json"
 	"fmt"
-
-	"github.com/bytedance/sonic"
 )
 
 // lineChunk is a partially parsed conconcrdance line.
@@ -65,7 +64,7 @@ func (t *Token) HasError() bool {
 }
 
 func (t *Token) MarshalJSON() ([]byte, error) {
-	return sonic.Marshal(
+	return json.Marshal(
 		struct {
 			Type   string            `json:"type"`
 			Word   string            `json:"word"`
