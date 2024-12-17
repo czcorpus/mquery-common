@@ -92,6 +92,18 @@ func (t *Token) String() string {
 // in a concordance line
 type TokenSlice []LineElement
 
+// Tokens returns all the line elements which are tokens
+// (i.e. it filters out all the structures)
+func (ts TokenSlice) Tokens() []*Token {
+	ans := make([]*Token, 0, len(ts))
+	for _, v := range ts {
+		if tv, ok := v.(*Token); ok {
+			ans = append(ans, tv)
+		}
+	}
+	return ans
+}
+
 // Line represents a concordance line and its metadata (properties)
 type Line struct {
 
