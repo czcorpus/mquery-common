@@ -40,7 +40,6 @@ func (lp *LineParser) parseTokenQuadruple(s []string) *Token {
 	mAttrs := make(map[string]string)
 	attrString := s[2]
 	delimiter := attrString[:1] // we can use such value access as delim. is never > 1 byte
-	fmt.Println("delimiter: ", delimiter)
 	rawAttrs := strings.Split(attrString, delimiter)[1:]
 	var token Token
 	if len(rawAttrs) != len(lp.attrs)-1 {
