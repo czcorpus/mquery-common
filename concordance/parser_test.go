@@ -44,6 +44,8 @@ const (
 		` {col0 coll} /kvazikrystal/NNIP1-----A---- attr</s><s id=picko_knihaofyzi:1:1145:1 strong=true> strc Na {} /na/RR--4---------- attr  exotické` +
 		` {} /exotický/AAIP4----1A---- attr  kvazikrystaly {} /kvazikrystal/NNIP4-----A---- attr  si {} /se/P7--3---------- attr  často {}` +
 		` /často/Dg-------1A---- attr`
+
+	ts4_coll = `#57713857{refs:end}kvalita {} \u001fkvalita\u001fNNFS1-----A---- attr  života {} \u001fživot\u001fNNIS2-----A---- attr  pomáhajících {} \u001fpomáhající\u001fAGFP2-----A---- attr  profesí {} \u001fprofese\u001fNNFP2-----A---- attr  , {} \u001f,\u001fZ:------------- attr kvalita {col0 coll} \u001fkvalita\u001fNNFS1-----A---- attr  {} života {coll coll1} \u001fživot\u001fNNIS2-----A---- attr  rodinných {} \u001frodinný\u001fAAMP2----1A---- attr  příslušníků {} \u001fpříslušník\u001fNNMP2-----A---- attr  pečujících {} \u001fpečující\u001fAGMP2-----A---- attr  o {} \u001fo\u001fRR--4---------- attr`
 )
 
 func asTokenOrPanic(v LineElement) *Token {
@@ -109,5 +111,13 @@ func TestParsingLineWithStructs(t *testing.T) {
 		assert.Equal(t, "hi", closesList[0].Name)
 		assert.Equal(t, "s", closesList[1].Name)
 		assert.Equal(t, "s", closesList[2].Name)
+	}
+}
+
+func TestRegression4(t *testing.T) {
+	p := NewLineParser([]string{"word", "lemma", "tag"})
+	ans := p.Parse([]string{ts4_coll})
+	for _, a := range ans {
+		assert.Zero(t, a.ErrMsg)
 	}
 }
