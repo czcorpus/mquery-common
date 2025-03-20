@@ -20,6 +20,7 @@ package concordance
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
@@ -28,6 +29,10 @@ const (
 	// RefsEndMark is a custom separator which is used by Mquery
 	// to separate the "refs" section of a line output to
 	RefsEndMark = "{refs:end}"
+)
+
+var (
+	CollColl1Srch = regexp.MustCompile(`{}(.+){coll coll1}`)
 )
 
 // LineParser parses Manatee-encoded concordance lines and converts
@@ -166,8 +171,13 @@ func (lp *LineParser) parseRefs(refs string) (ans map[string]string, ref string)
 	return
 }
 
+func (lp *LineParser) fixCollColl1(s string) string {
+	return CollColl1Srch.ReplaceAllString(s, "$1 {coll coll1}")
+}
+
 // parseRawLine
 func (lp *LineParser) parseRawLine(rawLine string) Line {
+	rawLine = lp.fixCollColl1(rawLine)
 	chunks := lp.extractStructures(rawLine)
 	line := Line{}
 	for i, chunk := range chunks {
@@ -186,7 +196,11 @@ func (lp *LineParser) parseRawLine(rawLine string) Line {
 			items = lp.rmExtraColl(items)
 			if len(items)%4 != 0 {
 				line.Text = append(line.Text, &Token{Word: "---- ERROR (unparseable) ----"})
-				line.ErrMsg = fmt.Sprintf("unparseable Manatee KWIC line: `%s`", chunk.value)
+				line.ErrMsg = fmt.Sprintf(
+					"unparseable Manatee KWIC line: expected 4N elms, found %d: `%s`",
+					len(items),
+					chunk.value,
+				)
 
 			} else {
 				for i := 0; i < len(items); i += 4 {
