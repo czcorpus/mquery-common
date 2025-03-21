@@ -32,7 +32,7 @@ const (
 )
 
 var (
-	CollColl1Srch = regexp.MustCompile(`{}(.+){coll coll1}`)
+	CollColl1Srch = regexp.MustCompile(`{}|{coll coll1}`)
 )
 
 // LineParser parses Manatee-encoded concordance lines and converts
@@ -171,8 +171,46 @@ func (lp *LineParser) parseRefs(refs string) (ans map[string]string, ref string)
 	return
 }
 
+// fixCollColl1 solves the situation when we have a collocate
+// in the search results (aka applied "filter" in KonText).
+// This produces the collocate enclosed in `{} ... {coll coll1}`
+// where the first `{}` is added and thus the whole structure
+// does not match "normal" sequence which is the following pattern:
+// `foo {} SEPfoo_attr2SEPfoo_attr3SEP...foo_attrN attr`
+// repeated multiple times.
+// So in this case we need to find the pattern `{} ... {coll coll1}`
+// and remove the `{}` and then continue with "normal" parsing.
 func (lp *LineParser) fixCollColl1(s string) string {
-	return CollColl1Srch.ReplaceAllString(s, "$1 {coll coll1}")
+	// note - it this method, we use indexing within
+	// a string to cut pieces which is normally a bad
+	// idea as the indexes are pointing to bytes and
+	// not utf8 runes. But we take advantage of the fact,
+	// that regexp's FindAllStringIndex returns byte-aware
+	// indexing.
+	srch := CollColl1Srch.FindAllStringIndex(s, -1)
+	pos1 := [2]int{-1, -1} // position of latest '{}'
+	lastPos := 0           // last position of the cut once we encounter '{coll coll1}'
+	var ans strings.Builder
+	for _, x := range srch {
+		token := s[x[0]:x[1]]
+		if token == "{}" {
+			pos1 = [2]int{x[0], x[1]}
+
+		} else if token == "{coll coll1}" {
+			if pos1[0] > -1 {
+				ans.WriteString(s[:pos1[0]])
+				ans.WriteString(s[pos1[1]+1 : x[1]+1])
+				lastPos = x[1] + 1
+				if lastPos > len(s) {
+					return ans.String()
+				}
+			}
+		}
+	}
+	if lastPos < len(s)-1 {
+		ans.WriteString(s[lastPos:])
+	}
+	return ans.String()
 }
 
 // parseRawLine
