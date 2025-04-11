@@ -32,7 +32,7 @@ const (
 )
 
 var (
-	CollColl1Srch = regexp.MustCompile(`{}|{coll coll1}`)
+	CollColl1Srch = regexp.MustCompile(`{}|{col.?( col\w+)*}|attr`)
 )
 
 // LineParser parses Manatee-encoded concordance lines and converts
@@ -62,6 +62,12 @@ func (lp *LineParser) parseTokenQuadruple(s []string) *Token {
 		}
 		token.Word = s[0]
 		token.Strong = len(s[1]) > 2
+		if s[1] == "{kwic}" {
+			token.MatchType = MatchTypeKWIC
+
+		} else if s[1] == "{coll}" {
+			token.MatchType = MatchTypeColl
+		}
 		token.Attrs = mAttrs
 	}
 	return &token
@@ -99,7 +105,9 @@ func (lp *LineParser) normalizeTokens(tokens []string) []string {
 }
 
 func (lp *LineParser) splitToTokens(line string) ([]string, string) {
-	line = collIDPatt.ReplaceAllString(line, "{coll}")
+	line = strings.ReplaceAll(line, "{col0 coll}", "{kwic}")
+	line = strings.ReplaceAll(line, "{coll coll1}", "{coll}")
+	line = collIDPatt.ReplaceAllString(line, "{coll}") // transform possible unknown stuff to coll
 
 	refsAndRest := strings.Split(line, RefsEndMark)
 	var refsText string
@@ -119,23 +127,6 @@ func (lp *LineParser) splitToTokens(line string) ([]string, string) {
 		}
 	}
 	return ansTokens, refsText
-}
-
-func (lp *LineParser) rmExtraColl(tokens []string) []string {
-	if len(tokens)%4 == 0 {
-		return tokens
-	}
-	ans := make([]string, 0, len(tokens))
-	var prev string
-	for _, tk := range tokens {
-		if prev == "attr" && tk == "{coll}" {
-			prev = tk
-			continue
-		}
-		ans = append(ans, tk)
-		prev = tk
-	}
-	return ans
 }
 
 // extractStructures is a first stage parsing of Manatee concordance output which
@@ -171,16 +162,17 @@ func (lp *LineParser) parseRefs(refs string) (ans map[string]string, ref string)
 	return
 }
 
-// fixCollColl1 solves the situation when we have a collocate
-// in the search results (aka applied "filter" in KonText).
-// This produces the collocate enclosed in `{} ... {coll coll1}`
-// where the first `{}` is added and thus the whole structure
-// does not match "normal" sequence which is the following pattern:
+// normalizeCurlyMarkup solves the situation when the simplest pattern:
+//
 // `foo {} SEPfoo_attr2SEPfoo_attr3SEP...foo_attrN attr`
-// repeated multiple times.
-// So in this case we need to find the pattern `{} ... {coll coll1}`
-// and remove the `{}` and then continue with "normal" parsing.
-func (lp *LineParser) fixCollColl1(s string) string {
+//
+// is replaced by:
+//
+// {col0 coll ... etc. } foo {coll ...etc...} SEPfoo_attr2SEPfoo_attr3SEP...foo_attrN attr
+//
+// I.e. when a kwic/collocate is enclosed in curly braced markup. In such case
+// we want to transform the string to the simplest form so we can easily parse it.
+func (lp *LineParser) normalizeCurlyMarkup(s string) string {
 	// note - it this method, we use indexing within
 	// a string to cut pieces which is normally a bad
 	// idea as the indexes are pointing to bytes and
@@ -189,21 +181,27 @@ func (lp *LineParser) fixCollColl1(s string) string {
 	// indexing.
 	srch := CollColl1Srch.FindAllStringIndex(s, -1)
 	pos1 := [2]int{-1, -1} // position of latest '{}'
-	lastPos := 0           // last position of the cut once we encounter '{coll coll1}'
+	lastPos := 0           // last position of the cut once we encounter '{col* col...}'
+	numCurlyItems := 0
 	var ans strings.Builder
 	for _, x := range srch {
 		token := s[x[0]:x[1]]
-		if token == "{}" {
-			pos1 = [2]int{x[0], x[1]}
+		if strings.Contains(token, "attr") {
+			numCurlyItems = 0
+			ans.WriteString(s[lastPos:x[1]] + " ")
+			lastPos = x[1]
 
-		} else if token == "{coll coll1}" {
-			if pos1[0] > -1 {
-				ans.WriteString(s[:pos1[0]])
-				ans.WriteString(s[pos1[1]+1 : x[1]+1])
-				lastPos = x[1] + 1
-				if lastPos > len(s) {
-					return ans.String()
+		} else {
+			numCurlyItems++
+			if numCurlyItems == 1 {
+				pos1 = [2]int{x[0], x[1]}
+
+			} else if numCurlyItems > 1 {
+				if pos1[0]-1 > lastPos {
+					ans.WriteString(s[lastPos : pos1[0]-1])
 				}
+				ans.WriteString(s[pos1[1]:x[1]] + " ")
+				lastPos = x[1] + 1
 			}
 		}
 	}
@@ -215,7 +213,7 @@ func (lp *LineParser) fixCollColl1(s string) string {
 
 // parseRawLine
 func (lp *LineParser) parseRawLine(rawLine string) Line {
-	rawLine = lp.fixCollColl1(rawLine)
+	rawLine = lp.normalizeCurlyMarkup(rawLine)
 	chunks := lp.extractStructures(rawLine)
 	line := Line{}
 	for i, chunk := range chunks {
@@ -231,7 +229,6 @@ func (lp *LineParser) parseRawLine(rawLine string) Line {
 				line.Props, line.Ref = lp.parseRefs(refs)
 			}
 			items := lp.normalizeTokens(rtokens)
-			items = lp.rmExtraColl(items)
 			if len(items)%4 != 0 {
 				line.Text = append(line.Text, &Token{Word: "---- ERROR (unparseable) ----"})
 				line.ErrMsg = fmt.Sprintf(
