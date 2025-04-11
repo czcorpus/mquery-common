@@ -38,6 +38,15 @@ type LineElement interface {
 	HasError() bool
 }
 
+// ------------------------------------------------
+
+type MatchType string
+
+const (
+	MatchTypeKWIC MatchType = "kwic"
+	MatchTypeColl MatchType = "coll"
+)
+
 // ------------- token and methods
 // -------------------------------
 
@@ -47,6 +56,10 @@ type Token struct {
 
 	// Strong is a general flag for emphasizing the token
 	Strong bool `json:"strong"`
+
+	// MatchType specifies how is the token related to the search
+	// query. In general, we recognize "kwic" and "coll" matches here.
+	MatchType MatchType `json:"matchType,omitempty"`
 
 	// Attrs store additional attributes (e.g. PoS, lemma, syntax node parent)
 	// of a respective position.
@@ -66,17 +79,19 @@ func (t *Token) HasError() bool {
 func (t *Token) MarshalJSON() ([]byte, error) {
 	return json.Marshal(
 		struct {
-			Type   string            `json:"type"`
-			Word   string            `json:"word"`
-			Strong bool              `json:"strong"`
-			Attrs  map[string]string `json:"attrs"`
-			ErrMsg string            `json:"errMsg,omitempty"`
+			Type      string            `json:"type"`
+			Word      string            `json:"word"`
+			Strong    bool              `json:"strong"`
+			MatchType MatchType         `json:"matchType,omitempty"`
+			Attrs     map[string]string `json:"attrs"`
+			ErrMsg    string            `json:"errMsg,omitempty"`
 		}{
-			Type:   "token",
-			Word:   t.Word,
-			Strong: t.Strong,
-			Attrs:  t.Attrs,
-			ErrMsg: t.ErrMsg,
+			Type:      "token",
+			Word:      t.Word,
+			Strong:    t.Strong,
+			MatchType: t.MatchType,
+			Attrs:     t.Attrs,
+			ErrMsg:    t.ErrMsg,
 		},
 	)
 }
