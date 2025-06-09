@@ -261,6 +261,19 @@ func (lp *LineParser) Parse(lines []string) []Line {
 	return pLines
 }
 
+// ParseLine parses a single Manatee-open concordance line producing
+// more structured data.
+func (lp *LineParser) ParseLine(line string) Line {
+	return lp.parseRawLine(line)
+}
+
+// ParseAlignedLine parses a concordance line (the same logic as ParseLine)
+// and sets it as the `AlignedText` property of the provided `out`.
+func (lp *LineParser) ParseAlignedLine(line string, out *Line) {
+	tmp := lp.parseRawLine(line)
+	out.AlignedText = tmp.Text
+}
+
 // NewLineParser is a recommended factory function
 // to instantiate a `LineParser` value.
 func NewLineParser(attrs []string) *LineParser {
