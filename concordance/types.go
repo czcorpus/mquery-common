@@ -76,16 +76,18 @@ func (t *Token) HasError() bool {
 	return t.ErrMsg != ""
 }
 
+type tokenJson struct {
+	Type      string            `json:"type"`
+	Word      string            `json:"word"`
+	Strong    bool              `json:"strong"`
+	MatchType MatchType         `json:"matchType,omitempty"`
+	Attrs     map[string]string `json:"attrs"`
+	ErrMsg    string            `json:"errMsg,omitempty"`
+}
+
 func (t *Token) MarshalJSON() ([]byte, error) {
 	return json.Marshal(
-		struct {
-			Type      string            `json:"type"`
-			Word      string            `json:"word"`
-			Strong    bool              `json:"strong"`
-			MatchType MatchType         `json:"matchType,omitempty"`
-			Attrs     map[string]string `json:"attrs"`
-			ErrMsg    string            `json:"errMsg,omitempty"`
-		}{
+		tokenJson{
 			Type:      "token",
 			Word:      t.Word,
 			Strong:    t.Strong,
@@ -94,6 +96,19 @@ func (t *Token) MarshalJSON() ([]byte, error) {
 			ErrMsg:    t.ErrMsg,
 		},
 	)
+}
+
+func (t *Token) UnmarshalJSON(data []byte) error {
+	var tmp tokenJson
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return err
+	}
+	t.Word = tmp.Word
+	t.Strong = tmp.Strong
+	t.MatchType = tmp.MatchType
+	t.Attrs = tmp.Attrs
+	t.ErrMsg = tmp.ErrMsg
+	return nil
 }
 
 func (t *Token) String() string {

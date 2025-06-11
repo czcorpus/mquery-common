@@ -65,19 +65,21 @@ func (t *Struct) HasError() bool {
 	return t.ErrMsg != ""
 }
 
+type structJson struct {
+	Type          string            `json:"type"`
+	StructureType string            `json:"structureType"`
+	Name          string            `json:"name"`
+	ErrMsg        string            `json:"error,omitempty"`
+	Attrs         map[string]string `json:"attrs,omitempty"`
+}
+
 func (t *Struct) MarshalJSON() ([]byte, error) {
 	sType := "open"
 	if t.IsSelfClose {
 		sType = "self-close"
 	}
 	return json.Marshal(
-		struct {
-			Type          string            `json:"type"`
-			StructureType string            `json:"structureType"`
-			Name          string            `json:"name"`
-			ErrMsg        string            `json:"error,omitempty"`
-			Attrs         map[string]string `json:"attrs,omitempty"`
-		}{
+		structJson{
 			Type:          "markup",
 			StructureType: sType,
 			Name:          t.Name,
@@ -85,7 +87,20 @@ func (t *Struct) MarshalJSON() ([]byte, error) {
 			Attrs:         t.Attrs,
 		},
 	)
+}
 
+func (t *Struct) UnmarshalJSON(data []byte) error {
+	var tmp structJson
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return err
+	}
+	t.Name = tmp.Name
+	t.Attrs = tmp.Attrs
+	t.ErrMsg = tmp.ErrMsg
+	if tmp.Type == "self-close" {
+		t.IsSelfClose = true
+	}
+	return nil
 }
 
 func parseStructure(src string) LineElement {
