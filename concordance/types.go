@@ -134,6 +134,43 @@ func (ts TokenSlice) Tokens() []*Token {
 	return ans
 }
 
+func (ts *TokenSlice) UnmarshalJSON(data []byte) error {
+	var rawElements []json.RawMessage
+	if err := json.Unmarshal(data, &rawElements); err != nil {
+		return err
+	}
+
+	*ts = make([]LineElement, len(rawElements))
+
+	for i, rawElm := range rawElements {
+		var typeInfo struct {
+			Type          string `json:"type"`
+			StructureType string `json:"structureType"`
+		}
+		if err := json.Unmarshal(rawElm, &typeInfo); err != nil {
+			return err
+		}
+		var lineElm LineElement
+
+		if typeInfo.Type == "markup" {
+			if typeInfo.StructureType == "open" || typeInfo.StructureType == "self-close" {
+				lineElm = &Struct{}
+			}
+
+		} else if typeInfo.Type == "token" {
+			lineElm = &Token{}
+
+		} else {
+			return fmt.Errorf("unknown LineElement type %s", typeInfo.Type)
+		}
+		if err := json.Unmarshal(rawElm, lineElm); err != nil {
+			return err
+		}
+		(*ts)[i] = lineElm
+	}
+	return nil
+}
+
 // Line represents a concordance line and its metadata (properties)
 type Line struct {
 
