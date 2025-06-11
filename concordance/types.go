@@ -35,6 +35,7 @@ type lineChunk struct {
 // within a line
 type LineElement interface {
 	MarshalJSON() ([]byte, error)
+	UnmarshalJSON(data []byte) error
 	HasError() bool
 }
 

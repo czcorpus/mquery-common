@@ -15,20 +15,32 @@ func (s *CloseStruct) String() string {
 	return fmt.Sprintf("</%s>", s.Name)
 }
 
+type closeStructJson struct {
+	Type          string `json:"type"`
+	StructureType string `json:"structureType"`
+	Name          string `json:"name"`
+	Error         error  `json:"error,omitempty"`
+}
+
 func (s *CloseStruct) MarshalJSON() ([]byte, error) {
 	return json.Marshal(
-		struct {
-			Type          string `json:"type"`
-			StructureType string `json:"structureType"`
-			Name          string `json:"name"`
-			Error         error  `json:"error,omitempty"`
-		}{
+		closeStructJson{
 			Type:          "markup",
 			StructureType: "close",
 			Name:          s.Name,
 			Error:         s.Error,
 		},
 	)
+}
+
+func (s *CloseStruct) UnmarshalJSON(data []byte) error {
+	var tmp closeStructJson
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return err
+	}
+	s.Name = tmp.Name
+	s.Error = tmp.Error
+	return nil
 }
 
 func (s *CloseStruct) HasError() bool {
