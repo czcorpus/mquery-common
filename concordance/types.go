@@ -179,7 +179,7 @@ type Line struct {
 
 	// AlignedText contains possible aligned text chunk in case
 	// the queried corpus is a parallel one
-	AlignedText TokenSlice `json:"alingedText"`
+	AlignedText TokenSlice `json:"alignedText"`
 
 	// Ref contains numeric ID of the first token of the KWIC
 	// It is typically used when referring back to the concordance
