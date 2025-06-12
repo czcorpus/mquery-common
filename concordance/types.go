@@ -21,6 +21,7 @@ package concordance
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // lineChunk is a partially parsed conconcrdance line.
@@ -37,6 +38,7 @@ type LineElement interface {
 	MarshalJSON() ([]byte, error)
 	UnmarshalJSON(data []byte) error
 	HasError() bool
+	String() string
 }
 
 // ------------------------------------------------
@@ -113,7 +115,7 @@ func (t *Token) UnmarshalJSON(data []byte) error {
 }
 
 func (t *Token) String() string {
-	return fmt.Sprintf("Token{Value: %s}", t.Word)
+	return t.Word
 }
 
 // ----------------------------------------------
@@ -121,6 +123,17 @@ func (t *Token) String() string {
 // TokenSlice represents a flow of tokens and markup
 // in a concordance line
 type TokenSlice []LineElement
+
+func (ts TokenSlice) String() string {
+	var ans strings.Builder
+	for i, tok := range ts {
+		if i > 0 {
+			ans.WriteString(" ")
+		}
+		ans.WriteString(tok.String())
+	}
+	return ans.String()
+}
 
 // Tokens returns all the line elements which are tokens
 // (i.e. it filters out all the structures)
