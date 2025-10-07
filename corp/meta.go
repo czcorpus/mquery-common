@@ -151,6 +151,8 @@ type CorpusSetup struct {
 	// Note that not all corpora have to have this attribute specified.
 	BibIDAttr string `json:"bibIdAttr"`
 
+	Tagsets []SupportedTagset `json:"tagsets"`
+
 	// Size represents size of corpus in tokens. In MQuery, this does not
 	// have to be configured as MQuery can get the value via Manatee.
 	Size int64 `json:"size,omitempty"`
