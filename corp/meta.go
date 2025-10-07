@@ -104,7 +104,7 @@ func (cw ContextWindow) LeftAndRight() (lft int, rgt int) {
 
 // ---------------
 
-// CorpusSetup is a general configuration of a corpus in MQuery (and other apps.)
+// CorpusSetup is a general configuration of a corpus in MQuery and other apps.
 type CorpusSetup struct {
 	ID                   string             `json:"id"`
 	FullName             map[string]string  `json:"fullName"`
@@ -125,14 +125,35 @@ type CorpusSetup struct {
 	// MQuery also supports so called saved subcorpora which are files created via Manatee-open
 	// (or in a more user-friendly way using KonText or NoSkE).
 	Subcorpora map[string]Subcorpus `json:"subcorpora"`
+
 	// ViewContextStruct is a structure used to specify "units"
 	// for KWIC left and right context. Typically, this is
 	// a structure representing a sentence or a speach.
-	ViewContextStruct string                   `json:"viewContextStruct"`
-	Variants          map[string]CorpusVariant `json:"variants"`
-	SrchKeywords      []string                 `json:"srchKeywords"`
-	WebURL            string                   `json:"webUrl"`
-	HasPublicAudio    bool                     `json:"hasPublicAudio"`
+	ViewContextStruct string `json:"viewContextStruct"`
+
+	// Variants allows for specifying multiple corpora based on a common "core".
+	// This typicallay applies for parallel corpora where their structure is the same
+	// and they differ just in a language.
+	Variants       map[string]CorpusVariant `json:"variants"`
+	SrchKeywords   []string                 `json:"srchKeywords"`
+	WebURL         string                   `json:"webUrl"`
+	HasPublicAudio bool                     `json:"hasPublicAudio"`
+
+	// BibLabelAttr is an attribute specifying a (possibly non-unique) title/label of an
+	// unique text work (e.g. a book). It always comes with BibIDAttr.
+	//
+	// Note that not all corpora have to have this attribute specified.
+	BibLabelAttr string `json:"bibLabelAttr"`
+
+	// BibIDAttr is an attribute specifying a unique text work by providing a unique ID.
+	// It always comes with BibLabelAttr.
+	//
+	// Note that not all corpora have to have this attribute specified.
+	BibIDAttr string `json:"bibIdAttr"`
+
+	// Size represents size of corpus in tokens. In MQuery, this does not
+	// have to be configured as MQuery can get the value via Manatee.
+	Size int64 `json:"size,omitempty"`
 }
 
 func (cs *CorpusSetup) LocaleDescription(lang string) string {
