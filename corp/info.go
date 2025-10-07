@@ -1,6 +1,6 @@
-// Copyright 2023 Martin Zimandl <martin.zimandl@gmail.com>
 // Copyright 2023 Tomas Machalek <tomas.machalek@gmail.com>
-// Copyright 2023 Institute of the Czech National Corpus,
+// Copyright 2023 Martin Zimandl <martin.zimandl@gmail.com>
+// Copyright 2023 Department of Linguistics,
 //                Faculty of Arts, Charles University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
