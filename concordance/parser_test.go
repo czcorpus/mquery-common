@@ -45,6 +45,8 @@ const (
 
 	ts4_coll = `#57713857{refs:end}kvalita {} \u001fkvalita\u001fNNFS1-----A---- attr  života {} \u001fživot\u001fNNIS2-----A---- attr  pomáhajících {} \u001fpomáhající\u001fAGFP2-----A---- attr  profesí {} \u001fprofese\u001fNNFP2-----A---- attr  , {} \u001f,\u001fZ:------------- attr kvalita {col0 coll} \u001fkvalita\u001fNNFS1-----A---- attr  {} života {coll coll1} \u001fživot\u001fNNIS2-----A---- attr  rodinných {} \u001frodinný\u001fAAMP2----1A---- attr  příslušníků {} \u001fpříslušník\u001fNNMP2-----A---- attr  pečujících {} \u001fpečující\u001fAGMP2-----A---- attr  o {} \u001fo\u001fRR--4---------- attr`
 	ts5_coll = `#37219897{refs:end}smysl {} \x1fsmysl\x1fNNIS4-----A---- attr  . {} \x1f.\x1fZ:------------- attr  Teplý {} \x1fteplý\x1fAAIS1----1A---- attr  tábor {} \x1ftábor\x1fNNIS1-----A---- attr  je {} \x1fbýt\x1fVB-S---3P-AAI-- attr dojná {col0 coll} \x1fdojný\x1fAAFS1----1A---- attr  {} kráva {coll coll1} \x1fkráva\x1fNNFS1-----A---- attr  . {} \x1f.\x1fZ:------------- attr  Všem {} \x1fvšechen\x1fPLMP3---------- attr  , {} \x1f,\x1fZ:------------- attr  kdo {} \x1fkdo\x1fPKM-1---------- attr`
+
+	ts6_refs = `#40281069,doc.title=Pastička,doc.txtype=SCR: drama{refs:end}ANNA {} AnnaNNFS1-----A---- attr  - {} -Z:------------- attr  Tak {} takDb------------- attr ahoj {col0 coll} ahojII------------- attr . {} .Z:------------- attr`
 )
 
 func asTokenOrPanic(v LineElement) *Token {
@@ -127,4 +129,11 @@ func TestRegression5(t *testing.T) {
 	for _, a := range ans {
 		assert.Zero(t, a.ErrMsg)
 	}
+}
+
+func TestRefsExtraction(t *testing.T) {
+	p := NewLineParser([]string{"word", "lemma", "tag"})
+	ans := p.Parse([]string{ts6_refs})
+	assert.Equal(t, "Pastička", ans[0].Props["doc.title"])
+	assert.Equal(t, "SCR: drama", ans[0].Props["doc.txtype"])
 }
