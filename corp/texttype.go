@@ -34,7 +34,8 @@ type TextProperty string
 func (tp TextProperty) Validate() bool {
 	return tp == TextPropertyAuthor || tp == TextPropertyTitle ||
 		tp == TextPropertyPubYear || tp == TextPropertyTextType ||
-		tp == TextPropertyTranslator || tp == TextPropertyOriginaLang
+		tp == TextPropertyTranslator || tp == TextPropertyOriginaLang ||
+		tp == TextPropertyMedium
 }
 
 func (tp TextProperty) String() string {
