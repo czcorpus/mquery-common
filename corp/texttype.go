@@ -23,6 +23,7 @@ const (
 	TextPropertyTranslator  = "translator"
 	TextPropertyOriginaLang = "original-language"
 	TextPropertyTextType    = "text-type"
+	TextPropertyMedium      = "medium"
 )
 
 // TextProperty is a generalized text type property used in APIs across multiple
