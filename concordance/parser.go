@@ -60,10 +60,10 @@ func (lp *LineParser) parseTokenQuadruple(s []string) *Token {
 		}
 		token.Word = s[0]
 		token.Strong = len(s[1]) > 2
-		if s[1] == "{kwic}" {
+		switch s[1] {
+		case "{kwic}":
 			token.MatchType = MatchTypeKWIC
-
-		} else if s[1] == "{coll}" {
+		case "{coll}":
 			token.MatchType = MatchTypeColl
 		}
 		token.Attrs = mAttrs
