@@ -112,7 +112,6 @@ type CorpusSetup struct {
 	SyntaxConcordance    SyntaxConcordance  `json:"syntaxConcordance"`
 	PosAttrs             PosAttrList        `json:"posAttrs"`
 	ConcMarkupStructures []string           `json:"concMarkupStructures"`
-	ConcTextPropsAttrs   []string           `json:"concTextPropsAttrs"`
 	TextProperties       TextTypeProperties `json:"textProperties"`
 	MaximumRecords       int                `json:"maximumRecords"`
 
@@ -158,6 +157,16 @@ type CorpusSetup struct {
 	Size int64 `json:"size,omitempty"`
 }
 
+func (cs *CorpusSetup) ConcTextPropsAttrs() []string {
+	ans := make([]string, len(cs.TextProperties))
+	i := 0
+	for _, v := range cs.TextProperties {
+		ans[i] = v.Name
+		i++
+	}
+	return ans
+}
+
 func (cs *CorpusSetup) LocaleDescription(lang string) string {
 	d := cs.Description[lang]
 	if d != "" {
@@ -180,9 +189,9 @@ func (cs *CorpusSetup) GetPosAttr(name string) PosAttr {
 }
 
 func (cs *CorpusSetup) KnownStructures() []string {
-	ans := make([]string, 0, len(cs.ConcMarkupStructures)+len(cs.ConcTextPropsAttrs))
+	ans := make([]string, 0, len(cs.ConcMarkupStructures)+len(cs.ConcTextPropsAttrs()))
 	ans = append(ans, cs.ConcMarkupStructures...)
-	tmp := collections.SliceMap(cs.ConcTextPropsAttrs, func(s string, i int) string {
+	tmp := collections.SliceMap(cs.ConcTextPropsAttrs(), func(s string, i int) string {
 		return strings.Split(s, ".")[0]
 	})
 	ans = append(ans, tmp...)
