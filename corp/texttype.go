@@ -17,13 +17,14 @@
 package corp
 
 const (
-	TextPropertyAuthor      = "author"
-	TextPropertyTitle       = "title"
-	TextPropertyPubYear     = "publication-year"
-	TextPropertyTranslator  = "translator"
-	TextPropertyOriginaLang = "original-language"
-	TextPropertyTextType    = "text-type"
-	TextPropertyMedium      = "medium"
+	TextPropertyAuthor      TextProperty = "author"
+	TextPropertyTitle       TextProperty = "title"
+	TextPropertyPubYear     TextProperty = "publication-year"
+	TextPropertyPubDate     TextProperty = "publication-date"
+	TextPropertyTranslator  TextProperty = "translator"
+	TextPropertyOriginaLang TextProperty = "original-language"
+	TextPropertyTextType    TextProperty = "text-type"
+	TextPropertyMedium      TextProperty = "medium"
 )
 
 // TextProperty is a generalized text type property used in APIs across multiple
@@ -33,9 +34,9 @@ type TextProperty string
 
 func (tp TextProperty) Validate() bool {
 	return tp == TextPropertyAuthor || tp == TextPropertyTitle ||
-		tp == TextPropertyPubYear || tp == TextPropertyTextType ||
-		tp == TextPropertyTranslator || tp == TextPropertyOriginaLang ||
-		tp == TextPropertyMedium
+		tp == TextPropertyPubYear || tp == TextPropertyPubDate ||
+		tp == TextPropertyTextType || tp == TextPropertyTranslator ||
+		tp == TextPropertyOriginaLang || tp == TextPropertyMedium
 }
 
 func (tp TextProperty) String() string {
@@ -70,9 +71,20 @@ type TextTypes map[string][]string
 
 // ------
 
+// TTPropertyConf is a universal/common text property (mapped to
+// some real physical one in a corpus).
 type TTPropertyConf struct {
 	Name         string `json:"name"`
 	IsInOverview bool   `json:"isInOverview"`
+
+	// DateFormat can be used in case the attribute represents a date (year, year+month+day,...).
+	// The format is the same as Golang time parsing layout string,
+	// e.g.: "2006-01-02" for days granularity in ISO8601 format, "2006" for years etc.
+	DateFormat string `json:"dateFormat"`
+}
+
+func (ttpc TTPropertyConf) IsDateType() bool {
+	return ttpc.DateFormat != ""
 }
 
 // ------
