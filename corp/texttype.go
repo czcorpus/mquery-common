@@ -87,11 +87,24 @@ func (ttpc TTPropertyConf) IsDateType() bool {
 	return ttpc.DateFormat != ""
 }
 
+func (ttpc TTPropertyConf) IsZero() bool {
+	return ttpc.Name == ""
+}
+
 // ------
 
 // TextTypeProperties maps between generalized text properties
 // and specific corpus structural attributes.
 type TextTypeProperties map[TextProperty]TTPropertyConf
+
+// Get provides a safe way how to get text property. It works
+// even if the instance is nil.
+func (ttp TextTypeProperties) Get(tp TextProperty) TTPropertyConf {
+	if ttp == nil {
+		return TTPropertyConf{}
+	}
+	return ttp[tp]
+}
 
 // Prop returns a generalized property based on provided struct. attribute
 // If nothing is found, empty TextProperty is returned
