@@ -31,7 +31,8 @@ var (
 	splitTags       = regexp.MustCompile(`(<[^>]+>)`)
 	attrValRegexp   = regexp.MustCompile(`(\w+)=([^"^\s]+)`)
 	closeTagRegexp  = regexp.MustCompile(`</([^>]+)\s*>`)
-	refsRegexp      = regexp.MustCompile(`((\w+\.\w+)=([^,]+))|(#\d+)`)
+	refsIDRegexp    = regexp.MustCompile(`^#\d+`)
+	refsKeyRegexp   = regexp.MustCompile(`(?:^|,)(\w+\.\w+)=`)
 )
 
 func isElement(tagSrc string) bool {

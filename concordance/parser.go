@@ -144,18 +144,22 @@ func (lp *LineParser) extractStructures(line string) []lineChunk {
 }
 
 // parseRefs parses text metadata (aka "refs" in KonText/NoSkE)
+// in the form `#ID,struct.attr1=value1,struct.attr2=value2,...`.
+// Values may contain any characters (incl. commas) - a value
+// ends where the next `,struct.attr=` starts.
 func (lp *LineParser) parseRefs(refs string) (ans map[string]string, ref string) {
-	srch := refsRegexp.FindAllStringSubmatch(refs, -1)
-	for _, item := range srch {
-		if strings.HasPrefix(item[0], "#") {
-			ref = item[0]
-
-		} else {
-			if ans == nil {
-				ans = make(map[string]string)
-			}
-			ans[item[2]] = item[3]
+	refs = strings.TrimSpace(refs)
+	ref = refsIDRegexp.FindString(refs)
+	keys := refsKeyRegexp.FindAllStringSubmatchIndex(refs, -1)
+	for i, key := range keys {
+		if ans == nil {
+			ans = make(map[string]string)
 		}
+		valEnd := len(refs)
+		if i < len(keys)-1 {
+			valEnd = keys[i+1][0]
+		}
+		ans[refs[key[2]:key[3]]] = refs[key[1]:valEnd]
 	}
 	return
 }
@@ -211,10 +215,17 @@ func (lp *LineParser) normalizeCurlyMarkup(s string) string {
 
 // parseRawLine
 func (lp *LineParser) parseRawLine(rawLine string) Line {
+	line := Line{}
+	// refs must be separated first as they may contain arbitrary
+	// text (incl. markup-like strings) which would confuse later stages
+	refsAndRest := strings.SplitN(rawLine, RefsEndMark, 2)
+	if len(refsAndRest) > 1 {
+		line.Props, line.Ref = lp.parseRefs(refsAndRest[0])
+		rawLine = refsAndRest[1]
+	}
 	rawLine = lp.normalizeCurlyMarkup(rawLine)
 	chunks := lp.extractStructures(rawLine)
-	line := Line{}
-	for i, chunk := range chunks {
+	for _, chunk := range chunks {
 		if chunk.isStruct {
 			multiStructSrch := splitTags.FindAllStringSubmatch(chunk.value, -1)
 			for _, item := range multiStructSrch {
@@ -222,10 +233,7 @@ func (lp *LineParser) parseRawLine(rawLine string) Line {
 			}
 
 		} else {
-			rtokens, refs := lp.splitToTokens(chunk.value)
-			if i == 0 {
-				line.Props, line.Ref = lp.parseRefs(refs)
-			}
+			rtokens, _ := lp.splitToTokens(chunk.value)
 			items := lp.normalizeTokens(rtokens)
 			if len(items)%4 != 0 {
 				line.Text = append(line.Text, &Token{Word: "---- ERROR (unparseable) ----"})
