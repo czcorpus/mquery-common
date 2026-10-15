@@ -47,6 +47,8 @@ const (
 	ts5_coll = `#37219897{refs:end}smysl {} \x1fsmysl\x1fNNIS4-----A---- attr  . {} \x1f.\x1fZ:------------- attr  Teplý {} \x1fteplý\x1fAAIS1----1A---- attr  tábor {} \x1ftábor\x1fNNIS1-----A---- attr  je {} \x1fbýt\x1fVB-S---3P-AAI-- attr dojná {col0 coll} \x1fdojný\x1fAAFS1----1A---- attr  {} kráva {coll coll1} \x1fkráva\x1fNNFS1-----A---- attr  . {} \x1f.\x1fZ:------------- attr  Všem {} \x1fvšechen\x1fPLMP3---------- attr  , {} \x1f,\x1fZ:------------- attr  kdo {} \x1fkdo\x1fPKM-1---------- attr`
 
 	ts6_refs = `#40281069,doc.title=Pastička,doc.txtype=SCR: drama{refs:end}ANNA {} AnnaNNFS1-----A---- attr  - {} -Z:------------- attr  Tak {} takDb------------- attr ahoj {col0 coll} ahojII------------- attr . {} .Z:------------- attr`
+
+	ts7_refs = `#1246234523,doc.title=Captain Brand of the 'Centipede'<BR>A Pirate of Eminence in the West Indies: His Love and Exploits, Together with Some Account of the Singular Manner` + RefsEndMark + ` pasti {} /past/NNFS2-----A---- attr`
 )
 
 func asTokenOrPanic(v LineElement) *Token {
@@ -136,4 +138,16 @@ func TestRefsExtraction(t *testing.T) {
 	ans := p.Parse([]string{ts6_refs})
 	assert.Equal(t, "Pastička", ans[0].Props["doc.title"])
 	assert.Equal(t, "SCR: drama", ans[0].Props["doc.txtype"])
+}
+
+func TestRefsWithMarkupExtraction(t *testing.T) {
+	p := NewLineParser([]string{"word", "lemma", "tag"})
+	ans := p.Parse([]string{ts7_refs})
+	assert.Equal(t, "#1246234523", ans[0].Ref)
+	assert.Equal(
+		t,
+		"Captain Brand of the 'Centipede'<BR>A Pirate of Eminence in the West Indies: "+
+			"His Love and Exploits, Together with Some Account of the Singular Manner",
+		ans[0].Props["doc.title"],
+	)
 }

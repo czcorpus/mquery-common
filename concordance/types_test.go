@@ -22,11 +22,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRefsRegexp(t *testing.T) {
-	s := "#36940724,doc.title=Snídaně v poledne,doc.id=snidane-v-poledne"
-	srch := refsRegexp.FindAllString(s, -1)
-	assert.Equal(t, 3, len(srch))
-	assert.Equal(t, "#36940724", srch[0])
-	assert.Equal(t, "doc.title=Snídaně v poledne", srch[1])
-	assert.Equal(t, "doc.id=snidane-v-poledne", srch[2])
+func TestParseRefs(t *testing.T) {
+	p := NewLineParser([]string{"word"})
+	props, ref := p.parseRefs("#36940724,doc.title=Snídaně v poledne,doc.id=snidane-v-poledne")
+	assert.Equal(t, "#36940724", ref)
+	assert.Equal(t, 2, len(props))
+	assert.Equal(t, "Snídaně v poledne", props["doc.title"])
+	assert.Equal(t, "snidane-v-poledne", props["doc.id"])
+}
+
+func TestParseRefsCommaInValue(t *testing.T) {
+	p := NewLineParser([]string{"word"})
+	props, ref := p.parseRefs("#1,doc.title=Foo,bar, baz,doc.id=x,y")
+	assert.Equal(t, "#1", ref)
+	assert.Equal(t, "Foo,bar, baz", props["doc.title"])
+	assert.Equal(t, "x,y", props["doc.id"])
+}
+
+func TestParseRefsNoProps(t *testing.T) {
+	p := NewLineParser([]string{"word"})
+	props, ref := p.parseRefs("#75308554 ")
+	assert.Equal(t, "#75308554", ref)
+	assert.Nil(t, props)
 }
