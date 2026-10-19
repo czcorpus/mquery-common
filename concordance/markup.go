@@ -27,7 +27,7 @@ var (
 	collIDPatt      = regexp.MustCompile(`\{col\w+(\s+col\w+)*}`)
 	tagSrchRegexpSC = regexp.MustCompile(`^<([\w\d\p{Po}]+)(\s+.*?|)/>$`)
 	tagSrchRegexp   = regexp.MustCompile(`^<([\w\d\p{Po}]+)(\s+.*?|)/?>$`)
-	tagsAndNoTags   = regexp.MustCompile(`((<[^>]+>)+ strc)|([^<]+)`)
+	structsRegexp   = regexp.MustCompile(`(<[^>]+>)+ strc`)
 	splitTags       = regexp.MustCompile(`(<[^>]+>)`)
 	attrValRegexp   = regexp.MustCompile(`(\w+)=([^"^\s]+)`)
 	closeTagRegexp  = regexp.MustCompile(`</([^>]+)\s*>`)

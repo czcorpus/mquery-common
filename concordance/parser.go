@@ -129,16 +129,22 @@ func (lp *LineParser) splitToTokens(line string) ([]string, string) {
 
 // extractStructures is a first stage parsing of Manatee concordance output which
 // isolates text and structural (markup) chunks.
+// Only `<...> strc` sequences are considered structures, everything
+// between them is text - so token attributes may contain values
+// like `jj_<sub>` without breaking the parsing.
 func (lp *LineParser) extractStructures(line string) []lineChunk {
-	chunks := tagsAndNoTags.FindAllString(line, -1)
-	ans := make([]lineChunk, len(chunks))
-	for i, ch := range chunks {
-		if strings.HasPrefix(ch, "<") && strings.HasSuffix(ch, "strc") {
-			ans[i] = lineChunk{value: ch, isStruct: true}
-
-		} else {
-			ans[i] = lineChunk{value: ch}
+	structs := structsRegexp.FindAllStringIndex(line, -1)
+	ans := make([]lineChunk, 0, 2*len(structs)+1)
+	lastPos := 0
+	for _, st := range structs {
+		if st[0] > lastPos {
+			ans = append(ans, lineChunk{value: line[lastPos:st[0]]})
 		}
+		ans = append(ans, lineChunk{value: line[st[0]:st[1]], isStruct: true})
+		lastPos = st[1]
+	}
+	if lastPos < len(line) {
+		ans = append(ans, lineChunk{value: line[lastPos:]})
 	}
 	return ans
 }

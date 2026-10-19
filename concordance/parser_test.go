@@ -49,6 +49,11 @@ const (
 	ts6_refs = `#40281069,doc.title=Pastička,doc.txtype=SCR: drama{refs:end}ANNA {} AnnaNNFS1-----A---- attr  - {} -Z:------------- attr  Tak {} takDb------------- attr ahoj {col0 coll} ahojII------------- attr . {} .Z:------------- attr`
 
 	ts7_refs = `#1246234523,doc.title=Captain Brand of the 'Centipede'<BR>A Pirate of Eminence in the West Indies: His Love and Exploits, Together with Some Account of the Singular Manner` + RefsEndMark + ` pasti {} /past/NNFS2-----A---- attr`
+
+	// note: the last token uses \x1f as attr. delimiter as its tag contains '/'
+	ts8_markup_in_attr = `#1` + RefsEndMark + ` foo {} /foo/jj_<sub> attr <s id=1> strc bar {} /bar/a<b attr` +
+		` <P> {} /-/null attr` +
+		" baz {} \x1fbaz\x1f<i>NN</i> attr</s> strc"
 )
 
 func asTokenOrPanic(v LineElement) *Token {
@@ -150,4 +155,20 @@ func TestRefsWithMarkupExtraction(t *testing.T) {
 			"His Love and Exploits, Together with Some Account of the Singular Manner",
 		ans[0].Props["doc.title"],
 	)
+}
+
+func TestMarkupInTokenAttrs(t *testing.T) {
+	p := NewLineParser([]string{"word", "lemma", "tag"})
+	ans := p.ParseLine(ts8_markup_in_attr)
+	assert.Zero(t, ans.ErrMsg)
+	assert.Equal(t, 6, len(ans.Text))
+	assert.Equal(t, "jj_<sub>", asTokenOrPanic(ans.Text[0]).Attrs["tag"])
+	assert.Equal(t, "s", ans.Text[1].(*Struct).Name)
+	assert.Equal(t, "a<b", asTokenOrPanic(ans.Text[2]).Attrs["tag"])
+	pTok := asTokenOrPanic(ans.Text[3])
+	assert.Equal(t, "<P>", pTok.Word)
+	assert.Equal(t, "-", pTok.Attrs["lemma"])
+	assert.Equal(t, "null", pTok.Attrs["tag"])
+	assert.Equal(t, "<i>NN</i>", asTokenOrPanic(ans.Text[4]).Attrs["tag"])
+	assert.Equal(t, "s", ans.Text[5].(*CloseStruct).Name)
 }
