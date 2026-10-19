@@ -17,6 +17,7 @@
 package corp
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/czcorpus/cnc-gokit/collections"
@@ -157,6 +158,9 @@ type CorpusSetup struct {
 	Size int64 `json:"size,omitempty"`
 }
 
+// ConcTextPropsAttrs returns a list of structural attributes
+// configured to be shown as concordance line text type properties.
+// The result is sorted alphabetically.
 func (cs *CorpusSetup) ConcTextPropsAttrs() []string {
 	ans := make([]string, len(cs.TextProperties))
 	i := 0
@@ -164,6 +168,7 @@ func (cs *CorpusSetup) ConcTextPropsAttrs() []string {
 		ans[i] = v.Name
 		i++
 	}
+	slices.Sort(ans)
 	return ans
 }
 

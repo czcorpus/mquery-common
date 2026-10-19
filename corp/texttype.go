@@ -126,6 +126,8 @@ func (ttp TextTypeProperties) List() []TextProperty {
 	return ans
 }
 
+// ListOverviewProps lists configured properties intended
+// for multi-attribute (independent) text types overview.
 func (ttp TextTypeProperties) ListOverviewProps() []TextProperty {
 	ans := make([]TextProperty, 0, len(ttp))
 	for _, v := range ttp {
