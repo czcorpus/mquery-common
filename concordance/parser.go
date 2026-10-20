@@ -30,7 +30,13 @@ const (
 )
 
 var (
-	CollColl1Srch = regexp.MustCompile(`{}|{col.?( col\w+)*}|attr`)
+	// CollColl1Srch searches for curly markup and for the `attr` token terminator.
+	// The terminator must be a standalone item - i.e. preceded by a whitespace
+	// and followed by a whitespace, a structure (`<`) or the end of the string -
+	// so we don't match `attr` inside words/attributes (e.g. "attractions").
+	// As RE2 does not support lookarounds, the terminator itself is captured
+	// by the first group.
+	CollColl1Srch = regexp.MustCompile(`\{\}|\{col.?(?: col\w+)*\}|\s(attr)(?:[\s<]|$)`)
 )
 
 // LineParser parses Manatee-encoded concordance lines and converts
@@ -187,14 +193,18 @@ func (lp *LineParser) normalizeCurlyMarkup(s string) string {
 	// not utf8 runes. But we take advantage of the fact,
 	// that regexp's FindAllStringIndex returns byte-aware
 	// indexing.
-	srch := CollColl1Srch.FindAllStringIndex(s, -1)
+	srch := CollColl1Srch.FindAllStringSubmatchIndex(s, -1)
 	pos1 := [2]int{-1, -1} // position of latest '{}'
 	lastPos := 0           // last position of the cut once we encounter '{col* col...}'
 	numCurlyItems := 0
 	var ans strings.Builder
-	for _, x := range srch {
-		token := s[x[0]:x[1]]
-		if strings.Contains(token, "attr") {
+	for _, m := range srch {
+		isAttr := m[2] >= 0
+		x := m[:2]
+		if isAttr {
+			x = m[2:4] // use just the `attr` part, without surrounding chars
+		}
+		if isAttr {
 			numCurlyItems = 0
 			ans.WriteString(s[lastPos:x[1]] + " ")
 			lastPos = x[1]

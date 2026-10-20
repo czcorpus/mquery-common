@@ -54,6 +54,8 @@ const (
 	ts8_markup_in_attr = `#1` + RefsEndMark + ` foo {} /foo/jj_<sub> attr <s id=1> strc bar {} /bar/a<b attr` +
 		` <P> {} /-/null attr` +
 		" baz {} \x1fbaz\x1f<i>NN</i> attr</s> strc"
+
+	ts9_attr_const_sens = `#1` + RefsEndMark + `succumbed {} /succumb/vvn attr to {} /to/ii attr the {} /the/at attr gayer {col0 coll} /gay/jjr attr attractions {} /attraction/nn2 attr of {} /of/io attr Parky {} /parky/np1 attr`
 )
 
 func asTokenOrPanic(v LineElement) *Token {
@@ -171,4 +173,15 @@ func TestMarkupInTokenAttrs(t *testing.T) {
 	assert.Equal(t, "null", pTok.Attrs["tag"])
 	assert.Equal(t, "<i>NN</i>", asTokenOrPanic(ans.Text[4]).Attrs["tag"])
 	assert.Equal(t, "s", ans.Text[5].(*CloseStruct).Name)
+}
+
+func TestAttrConstSensitivity(t *testing.T) {
+	p := NewLineParser([]string{"word", "lemma", "tag"})
+	ans := p.ParseLine(ts9_attr_const_sens)
+	assert.Zero(t, ans.ErrMsg)
+	assert.Len(t, ans.Text, 7)
+	assert.Equal(t, MatchTypeKWIC, asTokenOrPanic(ans.Text[3]).MatchType)
+	assert.Equal(t, "attractions", asTokenOrPanic(ans.Text[4]).Word)
+	assert.Equal(t, "attraction", asTokenOrPanic(ans.Text[4]).Attrs["lemma"])
+	assert.Equal(t, "nn2", asTokenOrPanic(ans.Text[4]).Attrs["tag"])
 }
