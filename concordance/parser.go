@@ -229,6 +229,57 @@ func (lp *LineParser) normalizeCurlyMarkup(s string) string {
 	return ans.String()
 }
 
+func isCurlyMarker(item string) bool {
+	return len(item) >= 2 && item[0] == '{' && item[len(item)-1] == '}'
+}
+
+// groupTokenItems groups whitespace-split items of a text chunk into
+// token quadruples `[word, {class}, attrs, attr]`. Instead of relying
+// on the number of items (which breaks for values containing whitespace,
+// e.g. oral corpora annotations like `(rušivý zvuk)`), it uses the curly
+// marker and the `attr` terminator as boundaries. Items belonging to
+// the same value are joined by a single space.
+func (lp *LineParser) groupTokenItems(items []string) ([][]string, bool) {
+	ans := make([][]string, 0, len(items)/4)
+	var word, attrs []string
+	var marker string
+	inAttrs := false
+	for _, item := range items {
+		if !inAttrs {
+			if isCurlyMarker(item) && len(word) > 0 {
+				marker = item
+				inAttrs = true
+
+			} else {
+				word = append(word, item)
+			}
+
+		} else if item == "attr" && len(attrs) > 0 {
+			ans = append(
+				ans,
+				[]string{strings.Join(word, " "), marker, strings.Join(attrs, " "), item},
+			)
+			word, attrs, marker = nil, nil, ""
+			inAttrs = false
+
+		} else {
+			attrs = append(attrs, item)
+		}
+	}
+	if inAttrs || len(word) > 0 {
+		// fallback to the original fixed-size grouping
+		// (keeps backward compatibility for lines with odd terminators)
+		if len(items)%4 != 0 {
+			return nil, false
+		}
+		ans = make([][]string, 0, len(items)/4)
+		for i := 0; i < len(items); i += 4 {
+			ans = append(ans, items[i:i+4])
+		}
+	}
+	return ans, true
+}
+
 // parseRawLine
 func (lp *LineParser) parseRawLine(rawLine string) Line {
 	line := Line{}
@@ -251,17 +302,18 @@ func (lp *LineParser) parseRawLine(rawLine string) Line {
 		} else {
 			rtokens, _ := lp.splitToTokens(chunk.value)
 			items := lp.normalizeTokens(rtokens)
-			if len(items)%4 != 0 {
+			quadruples, ok := lp.groupTokenItems(items)
+			if !ok {
 				line.Text = append(line.Text, &Token{Word: "---- ERROR (unparseable) ----"})
 				line.ErrMsg = fmt.Sprintf(
-					"unparseable Manatee KWIC line: expected 4N elms, found %d: `%s`",
+					"unparseable Manatee KWIC line: cannot group %d elms into tokens: `%s`",
 					len(items),
 					chunk.value,
 				)
 
 			} else {
-				for i := 0; i < len(items); i += 4 {
-					line.Text = append(line.Text, lp.parseTokenQuadruple(items[i:i+4]))
+				for _, q := range quadruples {
+					line.Text = append(line.Text, lp.parseTokenQuadruple(q))
 				}
 			}
 		}
