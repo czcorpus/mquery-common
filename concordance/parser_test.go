@@ -55,6 +55,8 @@ const (
 		` <P> {} /-/null attr` +
 		" baz {} \x1fbaz\x1f<i>NN</i> attr</s> strc"
 
+	ts10_space_in_values = `#1` + RefsEndMark + " no {} \x1fne\x1fTT attr  (rušivý zvuk) {} \x1f(rušivý zvuk)\x1fZ: attr  dobře {} \x1fdobře\x1fDg attr  "
+
 	ts9_attr_const_sens = `#1` + RefsEndMark + `succumbed {} /succumb/vvn attr to {} /to/ii attr the {} /the/at attr gayer {col0 coll} /gay/jjr attr attractions {} /attraction/nn2 attr of {} /of/io attr Parky {} /parky/np1 attr`
 )
 
@@ -184,4 +186,41 @@ func TestAttrConstSensitivity(t *testing.T) {
 	assert.Equal(t, "attractions", asTokenOrPanic(ans.Text[4]).Word)
 	assert.Equal(t, "attraction", asTokenOrPanic(ans.Text[4]).Attrs["lemma"])
 	assert.Equal(t, "nn2", asTokenOrPanic(ans.Text[4]).Attrs["tag"])
+}
+
+func TestSpaceInTokenValues(t *testing.T) {
+	p := NewLineParser([]string{"word", "lemma", "tag"})
+	ans := p.ParseLine(ts10_space_in_values)
+	assert.Zero(t, ans.ErrMsg)
+	assert.Len(t, ans.Text, 3)
+	tok := asTokenOrPanic(ans.Text[1])
+	assert.Equal(t, "(rušivý zvuk)", tok.Word)
+	assert.Equal(t, "(rušivý zvuk)", tok.Attrs["lemma"])
+	assert.Equal(t, "Z:", tok.Attrs["tag"])
+	assert.Equal(t, "dobře", asTokenOrPanic(ans.Text[2]).Word)
+}
+
+func TestReportedOralChunk(t *testing.T) {
+	// chunk as reported from oral_v1 (attrs: word, lemma)
+	p := NewLineParser([]string{"word", "lemma"})
+	ans := p.ParseLine(" (rušivý zvuk) {} \x1f(rušivý zvuk) attr  ")
+	assert.Zero(t, ans.ErrMsg)
+	assert.Len(t, ans.Text, 1)
+	tok := asTokenOrPanic(ans.Text[0])
+	assert.Equal(t, "(rušivý zvuk)", tok.Word)
+	assert.Equal(t, "(rušivý zvuk)", tok.Attrs["lemma"])
+}
+
+func TestIncompleteTokenIsError(t *testing.T) {
+	p := NewLineParser([]string{"word", "lemma"})
+	ans := p.ParseLine(" foo {} \x1ffoo attr  bar {} \x1fbar")
+	assert.NotZero(t, ans.ErrMsg)
+}
+
+func TestAlignedLineErrorIsKept(t *testing.T) {
+	p := NewLineParser([]string{"word", "lemma"})
+	line := p.ParseLine(" foo {} \x1ffoo attr ")
+	assert.Zero(t, line.ErrMsg)
+	p.ParseAlignedLine(" bar {} \x1fbar attr  baz {} \x1fbaz", &line)
+	assert.Contains(t, line.ErrMsg, "aligned text: ")
 }
