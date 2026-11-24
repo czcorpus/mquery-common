@@ -346,6 +346,15 @@ func (lp *LineParser) ParseLine(line string) Line {
 func (lp *LineParser) ParseAlignedLine(line string, out *Line) {
 	tmp := lp.parseRawLine(line)
 	out.AlignedText = tmp.Text
+	if tmp.ErrMsg != "" {
+		alignedErr := "aligned text: " + tmp.ErrMsg
+		if out.ErrMsg != "" {
+			out.ErrMsg += "; " + alignedErr
+
+		} else {
+			out.ErrMsg = alignedErr
+		}
+	}
 }
 
 // NewLineParser is a recommended factory function

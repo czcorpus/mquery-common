@@ -216,3 +216,11 @@ func TestIncompleteTokenIsError(t *testing.T) {
 	ans := p.ParseLine(" foo {} \x1ffoo attr  bar {} \x1fbar")
 	assert.NotZero(t, ans.ErrMsg)
 }
+
+func TestAlignedLineErrorIsKept(t *testing.T) {
+	p := NewLineParser([]string{"word", "lemma"})
+	line := p.ParseLine(" foo {} \x1ffoo attr ")
+	assert.Zero(t, line.ErrMsg)
+	p.ParseAlignedLine(" bar {} \x1fbar attr  baz {} \x1fbaz", &line)
+	assert.Contains(t, line.ErrMsg, "aligned text: ")
+}
