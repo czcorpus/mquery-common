@@ -18,6 +18,7 @@ package concordance
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -35,16 +36,22 @@ type closeStructJson struct {
 	Type          string `json:"type"`
 	StructureType string `json:"structureType"`
 	Name          string `json:"name"`
-	Error         error  `json:"error,omitempty"`
+	// ErrMsg is the message of CloseStruct.Error (an `error` cannot be
+	// encoded/decoded as JSON directly)
+	ErrMsg string `json:"error,omitempty"`
 }
 
 func (s *CloseStruct) MarshalJSON() ([]byte, error) {
+	var errMsg string
+	if s.Error != nil {
+		errMsg = s.Error.Error()
+	}
 	return json.Marshal(
 		closeStructJson{
 			Type:          "markup",
 			StructureType: "close",
 			Name:          s.Name,
-			Error:         s.Error,
+			ErrMsg:        errMsg,
 		},
 	)
 }
@@ -55,7 +62,10 @@ func (s *CloseStruct) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	s.Name = tmp.Name
-	s.Error = tmp.Error
+	s.Error = nil
+	if tmp.ErrMsg != "" {
+		s.Error = errors.New(tmp.ErrMsg)
+	}
 	return nil
 }
 
@@ -125,9 +135,7 @@ func (t *Struct) UnmarshalJSON(data []byte) error {
 	t.Name = tmp.Name
 	t.Attrs = tmp.Attrs
 	t.ErrMsg = tmp.ErrMsg
-	if tmp.Type == "self-close" {
-		t.IsSelfClose = true
-	}
+	t.IsSelfClose = tmp.StructureType == "self-close"
 	return nil
 }
 

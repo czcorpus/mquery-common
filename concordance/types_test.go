@@ -17,9 +17,12 @@
 package concordance
 
 import (
+	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseRefs(t *testing.T) {
@@ -44,4 +47,41 @@ func TestParseRefsNoProps(t *testing.T) {
 	props, ref := p.parseRefs("#75308554 ")
 	assert.Equal(t, "#75308554", ref)
 	assert.Nil(t, props)
+}
+
+func TestTokenSliceMarkupJSONRoundTrip(t *testing.T) {
+	src := TokenSlice{
+		&Struct{Name: "s", Attrs: map[string]string{"id": "s1"}},
+		&Token{Word: "pes", Attrs: map[string]string{"lemma": "pes"}},
+		&Struct{Name: "lb", IsSelfClose: true},
+		&Token{Word: "štěká", Attrs: map[string]string{"lemma": "štěkat"}},
+		&CloseStruct{Name: "s"},
+	}
+	data, err := json.Marshal(src)
+	require.NoError(t, err)
+	var ans TokenSlice
+	require.NoError(t, json.Unmarshal(data, &ans))
+	require.Len(t, ans, 5)
+	assert.Equal(t, src[0], ans[0])
+	assert.Equal(t, "pes", ans[1].(*Token).Word)
+	assert.Equal(t, &Struct{Name: "lb", IsSelfClose: true}, ans[2])
+	assert.Equal(t, &CloseStruct{Name: "s"}, ans[4])
+	assert.Equal(t, "<s id=s1> pes <lb /> štěká </s>", ans.String())
+}
+
+func TestCloseStructErrorJSON(t *testing.T) {
+	data, err := json.Marshal(&CloseStruct{Name: "s", Error: errors.New("unmatched")})
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"type":"markup","structureType":"close","name":"s","error":"unmatched"}`, string(data))
+	var ans CloseStruct
+	require.NoError(t, json.Unmarshal(data, &ans))
+	assert.Equal(t, "s", ans.Name)
+	require.True(t, ans.HasError())
+	assert.Equal(t, "unmatched", ans.Error.Error())
+}
+
+func TestTokenSliceUnknownMarkup(t *testing.T) {
+	var ans TokenSlice
+	err := json.Unmarshal([]byte(`[{"type":"markup","structureType":"foo","name":"s"}]`), &ans)
+	assert.Error(t, err)
 }
