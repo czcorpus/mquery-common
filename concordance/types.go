@@ -164,8 +164,13 @@ func (ts *TokenSlice) UnmarshalJSON(data []byte) error {
 		var lineElm LineElement
 
 		if typeInfo.Type == "markup" {
-			if typeInfo.StructureType == "open" || typeInfo.StructureType == "self-close" {
+			switch typeInfo.StructureType {
+			case "open", "self-close":
 				lineElm = &Struct{}
+			case "close":
+				lineElm = &CloseStruct{}
+			default:
+				return fmt.Errorf("unknown markup structure type %s", typeInfo.StructureType)
 			}
 
 		} else if typeInfo.Type == "token" {
